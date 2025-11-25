@@ -1,0 +1,20 @@
+# Entornos virtuales
+venv/
+env/
+.env
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+
+# Archivos de configuración de usuario (para no subir TUS preferencias)
+config.json
+
+# Logs y bases de datos temporales
+*.log
+
+# Archivos de sistema
+.DS_Store
+
+# Otros archivos
+firewall_detector2.py

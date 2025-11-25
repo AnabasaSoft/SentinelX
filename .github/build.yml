@@ -1,0 +1,152 @@
+name: Build SentinelX Linux Packages
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - "v*"  # Se ejecuta al subir etiquetas como v1.0, v1.0.1, etc.
+
+jobs:
+  ##########################################
+  # LINUX (AppImage + DEB + RPM + PKG)
+  ##########################################
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 1. Instalamos herramientas de sistema necesarias para empaquetar
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libfuse2 file
+          # FPM es la herramienta mágica para crear DEB, RPM y PKG
+          sudo gem install fpm
+
+      # 2. Descargamos linuxdeploy para crear el AppImage
+      - name: Download linuxdeploy
+        run: |
+          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage
+
+      # 3. Instalamos dependencias de Python
+      - name: Install Python deps
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      # 4. Compilamos el binario con PyInstaller
+      - name: Build Linux Binary
+        run: |
+          pyinstaller --noconfirm \
+            --onedir \
+            --windowed \
+            --name "SentinelX" \
+            --add-data "SentinelX-Icon-512.png:." \
+            --add-data "config.json:." \
+            --hidden-import "PySide6" \
+            SentinelX.py
+
+          # Nota: config.json se incluye por si acaso, aunque la app debería
+          # regenerarlo si no existe.
+
+      # 5. Preparamos la estructura de carpetas estándar de Linux (AppDir)
+      - name: Prepare AppDir
+        run: |
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
+          mkdir -p AppDir/usr/share/icons/hicolor/512x512/apps
+
+          # Copiamos la carpeta generada por PyInstaller
+          cp -r dist/SentinelX/* AppDir/usr/bin/
+
+          # Aseguramos permisos de ejecución
+          chmod +x AppDir/usr/bin/SentinelX
+
+          # Copiamos el icono al lugar estándar
+          cp SentinelX-Icon-512.png AppDir/usr/share/icons/hicolor/512x512/apps/sentinelx.png
+
+          # Creamos el archivo .desktop necesario para menús e integración
+          cat << EOF > AppDir/usr/share/applications/sentinelx.desktop
+          [Desktop Entry]
+          Name=SentinelX
+          Comment=Tu Guardián de Red para Linux
+          Exec=SentinelX
+          Icon=sentinelx
+          Type=Application
+          Categories=System;Security;Network;
+          Terminal=false
+          EOF
+
+      # 6. Generamos el AppImage (Portable universal)
+      - name: Generate AppImage
+        run: |
+          export LINUXDEPLOY_OUTPUT_VERSION="${{ github.ref_name }}"
+          ./linuxdeploy-x86_64.AppImage \
+            --appdir AppDir \
+            --desktop-file AppDir/usr/share/applications/sentinelx.desktop \
+            --executable AppDir/usr/bin/SentinelX \
+            --icon-file AppDir/usr/share/icons/hicolor/512x512/apps/sentinelx.png \
+            --output appimage
+
+      # 7. Generamos DEB, RPM y PKG usando FPM
+      - name: Build DEB / RPM / PACMAN
+        run: |
+          # Limpiamos la 'v' del tag para que la versión sea limpia (ej: 1.0.0)
+          VERSION_TAG=$(echo ${{ github.ref_name }} | sed 's/v//')
+
+          # --- DEB (Debian, Ubuntu, Mint, Kali) ---
+          # Añadimos dependencias recomendadas (polkit es vital para pkexec)
+          fpm -s dir -t deb -n sentinelx -v $VERSION_TAG \
+            --architecture amd64 \
+            --description "Firewall GUI for Linux (Firewalld/UFW)" \
+            --maintainer "Daniel Serrano <dani.eus79@gmail.com>" \
+            --url "https://github.com/danitxu79/SentinelX" \
+            --license "LGPLv3" \
+            --depends "policykit-1" \
+            --depends "python3" \
+            -C AppDir --prefix "/" .
+
+          # --- RPM (Fedora, RedHat, CentOS, OpenSUSE) ---
+          fpm -s dir -t rpm -n sentinelx -v $VERSION_TAG \
+            --architecture x86_64 \
+            --description "Firewall GUI for Linux (Firewalld/UFW)" \
+            --maintainer "Daniel Serrano <dani.eus79@gmail.com>" \
+            --url "https://github.com/danitxu79/SentinelX" \
+            --license "LGPLv3" \
+            --depends "polkit" \
+            --depends "python3" \
+            -C AppDir --prefix "/" .
+
+          # --- PACMAN (Arch, Manjaro) ---
+          fpm -s dir -t pacman -n sentinelx -v $VERSION_TAG \
+            --architecture x86_64 \
+            --description "Firewall GUI for Linux (Firewalld/UFW)" \
+            --maintainer "Daniel Serrano <dani.eus79@gmail.com>" \
+            --url "https://github.com/danitxu79/SentinelX" \
+            --license "LGPLv3" \
+            --depends "polkit" \
+            --depends "python" \
+            -C AppDir --prefix "/" .
+
+      # 8. Subimos los archivos generados a la sección "Releases" de GitHub
+      - name: Upload Linux Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            SentinelX*.AppImage
+            *.deb
+            *.rpm
+            *.pkg.tar.zst
+          tag_name: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false

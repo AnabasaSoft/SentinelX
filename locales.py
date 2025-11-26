@@ -109,6 +109,9 @@ TRANSLATIONS = {
         "btn_refresh_tooltip": "Recargar lista de reglas desde el sistema",
         "btn_refresh_rules": "Refrescar reglas",
         "msg_ufw_no_zones": "UFW no soporta perfiles de zona.",
+        "cfg_btn_restart": "Guardar y Reiniciar Interfaz",
+        "msg_info": "Información",
+        "msg_warning": "Aviso",
 
         # --- DETECCIÓN DE REDES ---
         "net_detect_title": "Nueva Red Detectada",
@@ -165,6 +168,9 @@ TRANSLATIONS = {
         "av_daemon_active": "Servicio activo",
         "av_daemon_inactive": "Servicio detenido",
         "av_daemon_error": "Error al cambiar estado del servicio.",
+        "av_path_warn": "Desactiva la protección primero para cambiar la carpeta.",
+        "av_path_dialog": "Seleccionar carpeta a vigilar",
+        "av_path_active": "Protección activada en: {}",
 
         # --- MENSAJES INSTALACIÓN ANTIVIRUS ---
         "av_install_confirm_title": "Instalar",
@@ -194,6 +200,17 @@ TRANSLATIONS = {
         "log_install_ok": "✅ Instalación finalizada con éxito.",
         "log_process_error": "❌ El proceso terminó con código de error: {}",
         "log_generic_error": "Error: {}",
+
+        # --- ON-ACCESS (TIEMPO REAL) ---
+        "oa_title": "Protección On-Access (Tiempo Real)",
+        "oa_desc": "Vigila carpetas específicas y bloquea el acceso a archivos infectados al instante.",
+        "oa_status_active": "🛡️ Protección Activa",
+        "oa_status_inactive": "⚠️ Protección Inactiva",
+        "oa_watched_dirs": "Carpetas vigiladas:",
+        "oa_btn_enable": "Activar Protección",
+        "oa_btn_disable": "Desactivar Protección",
+        "oa_config_error": "Error al configurar clamonacc.",
+        "oa_root_required": "Se requieren permisos de root para configurar On-Access.",
     },
 
     # English
@@ -297,6 +314,9 @@ TRANSLATIONS = {
         "btn_refresh_tooltip": "Reload rules from system",
         "btn_refresh_rules": "Refresh rules",
         "msg_ufw_no_zones": "UFW does not support zone profiles.",
+        "cfg_btn_restart": "Save and Restart Interface",
+        "msg_info": "Info",
+        "msg_warning": "Warning",
 
         # --- NETWORK DETECTION ---
         "net_detect_title": "New Network Detected",
@@ -352,6 +372,9 @@ TRANSLATIONS = {
         "av_daemon_active": "Service active",
         "av_daemon_inactive": "Service stopped",
         "av_daemon_error": "Error changing service state.",
+        "av_path_warn": "Disable protection first to change the folder.",
+        "av_path_dialog": "Select folder to watch",
+        "av_path_active": "Protection active at: {}",
 
         # --- ANTIVIRUS INSTALL MESSAGES ---
         "av_install_confirm_title": "Install",
@@ -381,6 +404,17 @@ TRANSLATIONS = {
         "log_install_ok": "✅ Installation finished successfully.",
         "log_process_error": "❌ Process finished with error code: {}",
         "log_generic_error": "Error: {}",
+
+        # --- ON-ACCESS (REAL TIME) ---
+        "oa_title": "On-Access Protection (Real Time)",
+        "oa_desc": "Monitors specific folders and blocks access to infected files instantly.",
+        "oa_status_active": "🛡️ Protection Active",
+        "oa_status_inactive": "⚠️ Protection Inactive",
+        "oa_watched_dirs": "Watched folders:",
+        "oa_btn_enable": "Enable Protection",
+        "oa_btn_disable": "Disable Protection",
+        "oa_config_error": "Error configuring clamonacc.",
+        "oa_root_required": "Root permissions required to configure On-Access.",
     }
 }
 

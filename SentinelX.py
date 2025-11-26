@@ -16,7 +16,7 @@ for everyone.
 :github:       https://github.com/danitxu79/SentinelX
 :copyright:    (c) 2025 Daniel Serrano Armenta. All rights reserved.
 :license:      Dual License (LGPLv3 / Commercial)
-:version:      0.4.1 (Beta)
+:version:      1.0
 
 ===============================================================================
 LICENSE NOTICE
@@ -65,206 +65,287 @@ from tab_antivirus import AntivirusTab
 from tab_config import ConfigTab
 
 # -----------------------------------------------------
-# ESTILO OSCURO
+# ESTILO OSCURO (MODERNO)
 # -----------------------------------------------------
 DARK_STYLE_SHEET = """
-    /* CONFIGURACIÓN GLOBAL DE VENTANAS Y CONTENEDORES */
+    /* --- VENTANA PRINCIPAL --- */
     QMainWindow, QWidget, QDialog {
-        background-color: #333333;
-        color: #F5F5F5;
-        selection-background-color: #4CAF50;
+        background-color: #2b2b2b; /* Un gris un poco más profundo */
+        color: #F0F0F0;
+        font-family: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
+        font-size: 14px;
     }
 
-    /* PANELES Y MARCOS */
+    /* --- PANELES Y TARJETAS --- */
     QFrame {
-        background-color: #3a3a3a;
-        border: none;
+        background-color: #333333;
+        border-radius: 8px; /* Bordes redondeados en los paneles */
     }
 
-    /* BOTONES ESTÁNDAR */
+    /* --- BOTONES MODERNOS (VERDES) --- */
     QPushButton {
         background-color: #4CAF50;
         color: white;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 4px;
-        min-height: 24px;
-    }
-    QPushButton:hover {
-        background-color: #388E3C;
-    }
-    QPushButton:pressed {
-        background-color: #66BB6A;
+        font-weight: bold;
+        border-radius: 6px;
+        padding: 10px 20px;
+
+        /* Truco para simular profundidad/sombra sutil */
+        border-bottom: 3px solid #2E7D32;
     }
 
-    /* BARRAS DE PESTAÑAS PRINCIPALES */
+    QPushButton:hover {
+        background-color: #57B85B; /* Un poco más brillante al pasar el ratón */
+        border-bottom: 3px solid #36893B;
+    }
+
+    QPushButton:pressed {
+        background-color: #2E7D32; /* Color más oscuro al presionar */
+        border-bottom: none; /* Quitamos el borde inferior para simular que baja */
+
+        /* Desplazamos el texto para efecto de "hundimiento" */
+        padding-top: 13px;
+        padding-bottom: 7px;
+    }
+
+    /* Botones Peligrosos (Rojos - Eliminación/Parada) */
+    /* Usamos el selector de atributo para detectar botones rojos por su estilo inline anterior */
+    QPushButton[style*="background-color: #d32f2f"] {
+        background-color: #E53935 !important;
+        border-bottom: 3px solid #B71C1C !important;
+    }
+    QPushButton[style*="background-color: #d32f2f"]:hover {
+        background-color: #EF5350 !important;
+    }
+    QPushButton[style*="background-color: #d32f2f"]:pressed {
+        background-color: #C62828 !important;
+        border-bottom: none !important;
+        padding-top: 13px;
+    }
+
+    /* --- PESTAÑAS (TABS) --- */
     QTabWidget::pane {
         border: 1px solid #444444;
+        border-radius: 4px;
+        background-color: #333333;
+        top: -1px; /* Fusión con la barra */
     }
     QTabBar::tab {
+        background: #2b2b2b;
+        color: #AAAAAA;
+        padding: 8px 20px;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        margin-right: 2px;
+        outline: 0px; /* Sin linea de foco */
+    }
+    QTabBar::tab:hover {
         background: #3a3a3a;
-        color: #CCCCCC;
-        padding: 8px 15px;
-        border: none;
-        border-top-left-radius: 4px;
-        border-top-right-radius: 4px;
-
-        /* --- ¡ESTO ES LO QUE FALTABA! --- */
-        outline: 0px; /* Elimina el subrayado/recuadro de foco */
+        color: #FFFFFF;
     }
     QTabBar::tab:selected {
         background: #4CAF50;
         color: white;
         font-weight: bold;
-        border: none; /* Asegura que no haya borde al seleccionarse */
+        /* Pequeño efecto de elevación en la pestaña activa */
+        border-bottom: 2px solid #4CAF50;
     }
 
-    /* RADIO BUTTONS */
+    /* --- CONTROLES DE FORMULARIO --- */
+    QLineEdit, QComboBox {
+        background-color: #1e1e1e;
+        border: 1px solid #555555;
+        border-radius: 4px;
+        padding: 5px;
+        color: #F0F0F0;
+        selection-background-color: #4CAF50;
+    }
+    QLineEdit:focus, QComboBox:focus {
+        border: 1px solid #4CAF50; /* Borde verde al escribir */
+    }
+
+    /* --- TABLAS --- */
+    QTableWidget {
+        background-color: #1e1e1e;
+        gridline-color: #333333;
+        border: 1px solid #444444;
+        border-radius: 4px;
+    }
+    QHeaderView::section {
+        background-color: #333333;
+        padding: 5px;
+        border: none;
+        border-right: 1px solid #444444;
+        font-weight: bold;
+    }
+    QTableWidget::item:selected {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    /* --- RADIO BUTTONS --- */
     QRadioButton {
-        color: #F5F5F5;
-        spacing: 5px;
+        spacing: 8px;
     }
     QRadioButton::indicator {
-        width: 14px;
-        height: 14px;
-        border-radius: 7px;
-        background-color: #555555;
-        border: 1px solid #777777;
+        width: 16px;
+        height: 16px;
+        border-radius: 9px;
+        background-color: #1e1e1e;
+        border: 2px solid #666666;
     }
     QRadioButton::indicator:checked {
+        background-color: #1e1e1e;
+        border: 2px solid #4CAF50;
+    }
+    /* El punto central del radio */
+    QRadioButton::indicator:checked::image {
         background-color: #4CAF50;
-        border: 1px solid #388E3C;
+        margin: 3px; /* Crea el efecto de anillo */
+        border-radius: 5px;
+    }
+    QRadioButton::indicator:hover {
+        border-color: #4CAF50;
+    }
+    #OnAccessFrame {
+        background-color: #253529; /* Verde muy oscuro y elegante */
+        border: 1px solid #2E7D32;
+        border-radius: 8px;
     }
 """
 
 # -----------------------------------------------------
-# ESTILO CLARO
+# ESTILO CLARO (GRIS PROFESIONAL - MÁS OSCURO)
 # -----------------------------------------------------
 LIGHT_STYLE_SHEET = """
     QMainWindow, QWidget, QDialog {
-        background-color: #F0F0F0;
-        color: #333333;
+        background-color: #C0C0C0; /* Gris Plata sólido (Mucho menos brillo) */
+        color: #2C3E50;
+        font-family: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
+        font-size: 14px;
         selection-background-color: #4CAF50;
     }
 
+    /* Los paneles ahora destacan claramente sobre el fondo gris */
     QFrame {
-        background-color: #FFFFFF;
-        border: none;
+        background-color: #E0E0E0;
+        border-radius: 8px;
     }
 
+    /* --- BOTONES --- */
     QPushButton {
-        background-color: #007ACC;
+        background-color: #3498DB;
         color: white;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 4px;
-        min-height: 24px;
+        font-weight: bold;
+        border-radius: 6px;
+        padding: 10px 20px;
+        border-bottom: 3px solid #2980B9;
     }
     QPushButton:hover {
-        background-color: #005A99;
+        background-color: #5DADE2;
+        border-bottom: 3px solid #3498DB;
     }
     QPushButton:pressed {
-        background-color: #3399FF;
+        background-color: #2980B9;
+        border-bottom: none;
+        padding-top: 13px;
+        padding-bottom: 7px;
     }
 
+    /* Botones Rojos */
+    QPushButton[style*="background-color: #d32f2f"] {
+        background-color: #E74C3C !important;
+        border-bottom: 3px solid #C0392B !important;
+    }
+    QPushButton[style*="background-color: #d32f2f"]:pressed {
+        background-color: #C0392B !important;
+        border-bottom: none !important;
+        padding-top: 13px;
+    }
+
+    /* --- PESTAÑAS --- */
     QTabWidget::pane {
-        border: 1px solid #CCCCCC;
+        border: 1px solid #999999;
+        border-radius: 4px;
+        background-color: #E0E0E0; /* Coincide con los frames */
     }
     QTabBar::tab {
-        background: #E0E0E0;
-        color: #555555;
-        padding: 8px 15px;
-        border: none;
-        border-top-left-radius: 4px;
-        border-top-right-radius: 4px;
-
-        /* --- ¡ESTO ES LO QUE FALTABA! --- */
-        outline: 0px; /* Elimina el subrayado/recuadro de foco */
+        background: #B0B0B0; /* Pestañas inactivas más oscuras para contraste */
+        color: #444444;
+        padding: 8px 20px;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        margin-right: 2px;
+        outline: 0px;
+    }
+    QTabBar::tab:hover {
+        background: #D0D0D0;
+        color: #222222;
     }
     QTabBar::tab:selected {
-        background: #FFFFFF;
-        color: #333333;
+        background: #3498DB; /* Azul para la activa */
+        color: white;
         font-weight: bold;
-        border: none; /* Asegura que no haya borde al seleccionarse */
+        border-bottom: 2px solid #2980B9;
     }
 
-    QLabel {
-        color: #333333;
-    }
-
-    QComboBox {
-        background-color: white;
-        color: #333333;
-        border: 1px solid #CCCCCC;
+    /* --- INPUTS Y TABLAS (BLANCOS PARA LEER MEJOR) --- */
+    QLineEdit, QComboBox {
+        background-color: #FFFFFF; /* Blanco puro para el texto */
+        border: 1px solid #888888;
         border-radius: 4px;
-        padding: 3px;
+        padding: 5px;
+        color: #2C3E50;
+        selection-background-color: #3498DB;
+    }
+    QLineEdit:focus, QComboBox:focus {
+        border: 1px solid #3498DB;
     }
 
+    QTableWidget {
+        background-color: #FFFFFF; /* Tabla blanca sobre fondo gris */
+        gridline-color: #DDDDDD;
+        border: 1px solid #888888;
+        border-radius: 4px;
+    }
+    QHeaderView::section {
+        background-color: #D0D0D0;
+        padding: 5px;
+        border: none;
+        border-right: 1px solid #AAAAAA;
+        font-weight: bold;
+        color: #2C3E50;
+    }
+    QTableWidget::item:selected {
+        background-color: #3498DB;
+        color: white;
+    }
+
+    /* --- RADIO BUTTONS --- */
     QRadioButton {
-        color: #333333;if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    # --- Cargar config y estilos ---
-    cfg = ConfigManager()
-    current_theme = cfg.get_theme()
-
-    if current_theme in THEMES:
-        app.setStyleSheet(THEMES[current_theme])
-    else:
-        app.setStyleSheet(THEMES["dark"])
-
-    # --- VERIFICACIÓN POLKIT (LÓGICA NUEVA) ---
-    # Consultamos si ya lo tenemos marcado como instalado en config.json
-    if not cfg.get_polkit_installed():
-        msg_box = QMessageBox()
-        msg_box.setWindowTitle(locales.get_text("polkit_title"))
-        msg_box.setText(locales.get_text("polkit_msg"))
-        msg_box.setIcon(QMessageBox.Question)
-
-        btn_yes = msg_box.addButton(locales.get_text("polkit_btn_yes"), QMessageBox.YesRole)
-        btn_no = msg_box.addButton(locales.get_text("polkit_btn_no"), QMessageBox.NoRole)
-        msg_box.setDefaultButton(btn_yes)
-
-        msg_box.exec()
-
-        if msg_box.clickedButton() == btn_yes:
-            # Instanciamos el manager
-            from polkit_manager import PolkitManager
-            polkit_mgr = PolkitManager()
-
-            # Intentamos instalar
-            if polkit_mgr.install_rule():
-                # ¡ÉXITO! Guardamos en la config para no volver a preguntar
-                cfg.set_polkit_installed(True)
-                QMessageBox.information(None, "SentinelX", locales.get_text("polkit_success"))
-            else:
-                QMessageBox.warning(None, "SentinelX", locales.get_text("polkit_error"))
-
-    # -----------------------------------
-
-    # Icono global y ventana
-    base_dir = os.path.dirname(__file__)
-    icon_path = os.path.join(base_dir, "SentinelX-Icon-512.png")
-    if os.path.exists(icon_path):
-        app_icon = QIcon(icon_path)
-        app.setWindowIcon(app_icon)
-
-    window = MainWindow()
-    window.showMaximized()
-
-    sys.exit(app.exec())
-        spacing: 5px;
+        spacing: 8px;
+        color: #222222; /* Texto casi negro */
     }
     QRadioButton::indicator {
-        width: 14px;
-        height: 14px;
-        border-radius: 7px;
-        background-color: #CCCCCC;
-        border: 1px solid #AAAAAA;
+        width: 16px;
+        height: 16px;
+        border-radius: 9px;
+        background-color: #FFFFFF;
+        border: 2px solid #666666;
     }
     QRadioButton::indicator:checked {
-        background-color: #007ACC;
-        border: 1px solid #005A99;
+        background-color: #E0E0E0;
+        border: 2px solid #3498DB;
+    }
+    QRadioButton::indicator:checked::image {
+        background-color: #3498DB;
+        margin: 3px;
+        border-radius: 5px;
+    }
+    #OnAccessFrame {
+        background-color: #E8F5E9; /* Verde claro suave */
+        border: 1px solid #C8E6C9;
+        border-radius: 8px;
     }
 """
 

@@ -1,11 +1,11 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QPushButton, QTextEdit, QProgressBar, QMessageBox, QFrame,
-                               QApplication)
-from PySide6.QtCore import Qt, QDir, QTimer
-from PySide6.QtGui import QFont, QColor
+                               QApplication, QFileDialog)
+from PySide6.QtCore import Qt, QDir
+from PySide6.QtGui import QFont
 
 import locales
-from ui_components import ToggleSwitch # <--- IMPORTANTE: Reutilizamos tu botón
+from ui_components import ToggleSwitch
 from antivirus_manager import AntivirusManager, ScanWorker, UpdateWorker, InstallWorker
 
 class AntivirusTab(QWidget):
@@ -35,7 +35,7 @@ class AntivirusTab(QWidget):
         self.lbl_daemon_status.setContentsMargins(0, 0, 10, 0)
         header_layout.addWidget(self.lbl_daemon_status)
 
-        # Interruptor (Toggle)
+        # Interruptor (Toggle) del Demonio Principal
         self.toggle = ToggleSwitch()
         self.toggle.clicked.connect(self.on_toggle_click)
         header_layout.addWidget(self.toggle)
@@ -55,7 +55,7 @@ class AntivirusTab(QWidget):
         self.lbl_info.setAlignment(Qt.AlignRight)
         layout.addWidget(self.lbl_info)
 
-        # --- 2. BOTONES DE ESCANEO ---
+        # --- 2. BOTONES DE ACCIÓN (ESCANEO / UPDATE) ---
         btn_layout = QHBoxLayout()
 
         self.btn_scan_home = QPushButton("🏠 " + locales.get_text("av_btn_scan_home"))
@@ -70,7 +70,7 @@ class AntivirusTab(QWidget):
         self.btn_update.setMinimumHeight(40)
         self.btn_update.clicked.connect(self.update_db)
 
-        # Botón STOP (Oculto)
+        # Botón STOP (Oculto por defecto)
         self.btn_stop = QPushButton("🛑 " + locales.get_text("av_btn_stop"))
         self.btn_stop.setMinimumHeight(40)
         self.btn_stop.setStyleSheet("background-color: #d32f2f; color: white; font-weight: bold;")
@@ -83,7 +83,76 @@ class AntivirusTab(QWidget):
         btn_layout.addWidget(self.btn_stop)
         layout.addLayout(btn_layout)
 
-        # --- 3. CONSOLA ---
+        # --- 3. SECCIÓN ON-ACCESS (TIEMPO REAL) ---
+        # Línea separadora 2
+        line2 = QFrame()
+        line2.setFrameShape(QFrame.HLine)
+        line2.setFrameShadow(QFrame.Sunken)
+        line2.setStyleSheet("background-color: #cccccc;")
+        layout.addWidget(line2)
+
+        # >>> AQUÍ ESTABA EL ERROR <<<
+        oa_layout = QVBoxLayout()
+
+        # Título y Estado OA
+        oa_header = QHBoxLayout()
+        lbl_oa_title = QLabel("🛡️ " + locales.get_text("oa_title"))
+        lbl_oa_title.setFont(QFont("Arial", 14, QFont.Bold))
+        oa_header.addWidget(lbl_oa_title)
+
+        oa_header.addStretch()
+
+        self.lbl_oa_status = QLabel("...")
+        self.lbl_oa_status.setFont(QFont("Arial", 10, QFont.Bold))
+        oa_header.addWidget(self.lbl_oa_status)
+
+        oa_layout.addLayout(oa_header)
+
+        # Descripción OA
+        lbl_oa_desc = QLabel(locales.get_text("oa_desc"))
+        lbl_oa_desc.setStyleSheet("color: #666; margin-bottom: 10px;")
+        oa_layout.addWidget(lbl_oa_desc)
+
+        # --- ZONA DE CONFIGURACIÓN (Botón + Ruta) ---
+        config_layout = QHBoxLayout()
+
+        # Botón Activar/Desactivar (Tamaño controlado)
+        self.btn_oa_toggle = QPushButton(locales.get_text("oa_btn_enable"))
+        self.btn_oa_toggle.setFixedSize(200, 45)
+        self.btn_oa_toggle.clicked.connect(self.toggle_on_access)
+        config_layout.addWidget(self.btn_oa_toggle)
+
+        config_layout.addStretch()
+
+        # Etiqueta "Carpeta vigilada:"
+        lbl_watch = QLabel(locales.get_text("oa_watched_dirs"))
+        lbl_watch.setStyleSheet("font-weight: bold;")
+        config_layout.addWidget(lbl_watch)
+
+        # La ruta actual
+        self.current_watch_path = "/home" # Valor por defecto
+        self.lbl_oa_path = QLabel(self.current_watch_path)
+        self.lbl_oa_path.setStyleSheet("font-style: italic; color: #555; background: #fff; padding: 5px; border-radius: 4px;")
+        config_layout.addWidget(self.lbl_oa_path)
+
+        # Botón para cambiar carpeta
+        self.btn_change_path = QPushButton("📁")
+        self.btn_change_path.setFixedSize(40, 30)
+        self.btn_change_path.setToolTip(locales.get_text("av_path_dialog"))
+        self.btn_change_path.clicked.connect(self.change_watch_path)
+        config_layout.addWidget(self.btn_change_path)
+
+        oa_layout.addLayout(config_layout)
+
+        # Enmarcar todo en un Frame bonito
+        oa_frame = QFrame()
+        oa_frame.setLayout(oa_layout)
+        # Usamos un ID para que el estilo cambie según el tema (Oscuro/Claro) en SentinelX.py
+        oa_frame.setObjectName("OnAccessFrame")
+
+        layout.addWidget(oa_frame)
+
+        # --- 4. CONSOLA DE LOGS ---
         self.log_output = QTextEdit()
         self.log_output.setReadOnly(True)
         self.log_output.setStyleSheet("""
@@ -97,13 +166,13 @@ class AntivirusTab(QWidget):
         """)
         layout.addWidget(self.log_output)
 
-        # --- 4. PROGRESO ---
+        # --- 5. BARRA DE PROGRESO ---
         self.progress = QProgressBar()
         self.progress.setTextVisible(False)
         self.progress.hide()
         layout.addWidget(self.progress)
 
-        # --- 5. BOTÓN INSTALAR (Si falta) ---
+        # --- 6. BOTÓN DE INSTALACIÓN (Si falta) ---
         self.btn_install = QPushButton("📥 " + locales.get_text("av_btn_install"))
         self.btn_install.setStyleSheet("background-color: #d32f2f; color: white; font-weight: bold; padding: 10px;")
         self.btn_install.clicked.connect(self.install_clamav)
@@ -116,13 +185,13 @@ class AntivirusTab(QWidget):
         self.check_status()
 
     def check_status(self):
-        # 1. Verificar si está instalado
+        # 1. Verificar si está instalado el paquete base
         if self.manager.is_installed():
             self.btn_install.hide()
             self.set_buttons_enabled(True)
             self.toggle.setEnabled(True)
 
-            # 2. Verificar estado del Demonio (Toggle)
+            # 2. Verificar estado del Demonio (Toggle superior)
             self.toggle.blockSignals(True)
             is_active = self.manager.is_daemon_active()
             self.toggle.setChecked(is_active)
@@ -151,29 +220,122 @@ class AntivirusTab(QWidget):
             self.set_buttons_enabled(False)
             self.btn_install.show()
 
+        # 3. Verificar estado On-Access
+        is_oa_active = self.manager.is_on_access_active()
+        if is_oa_active:
+            self.lbl_oa_status.setText(locales.get_text("oa_status_active"))
+            self.lbl_oa_status.setStyleSheet("color: #2ecc71;")
+            self.btn_oa_toggle.setText(locales.get_text("oa_btn_disable"))
+            # Estilo rojo para desactivar
+            self.btn_oa_toggle.setStyleSheet("background-color: #d32f2f; color: white;")
+        else:
+            self.lbl_oa_status.setText(locales.get_text("oa_status_inactive"))
+            self.lbl_oa_status.setStyleSheet("color: #7f8c8d;")
+            self.btn_oa_toggle.setText(locales.get_text("oa_btn_enable"))
+            # Resetear estilo (para que use el tema por defecto)
+            self.btn_oa_toggle.setStyleSheet("")
+
+    # --- CONTROL DEL DEMONIO (TOGGLE SUPERIOR) ---
     def on_toggle_click(self):
-        """Maneja el click en el interruptor"""
+        """Maneja el click en el interruptor del Demonio Principal"""
         target_state = self.toggle.isChecked()
 
-        # Cursor de espera porque systemctl tarda un poco
+        # LÓGICA DE SEGURIDAD:
+        # Si intentamos APAGAR el demonio pero el On-Access está ACTIVO,
+        # tenemos que prohibir la acción.
+        if not target_state and self.manager.is_on_access_active():
+            QMessageBox.warning(self, locales.get_text("msg_warning"),
+                "No puedes detener el servicio principal mientras la Protección en Tiempo Real está activa.\n\n"
+                "Desactiva primero la Protección On-Access.")
+
+            # Revertimos el botón visualmente
+            self.toggle.blockSignals(True)
+            self.toggle.setChecked(True)
+            self.toggle.blockSignals(False)
+            return
+
+        # Si todo bien, procedemos
         QApplication.setOverrideCursor(Qt.WaitCursor)
         success = self.manager.set_daemon_state(target_state)
         QApplication.restoreOverrideCursor()
 
         if success:
-            self.check_status() # Refrescar UI
+            self.check_status()
         else:
-            # Revertir si falló (ej. canceló contraseña)
+            # Revertir si falló
             self.toggle.blockSignals(True)
             self.toggle.setChecked(not target_state)
             self.toggle.blockSignals(False)
-            QMessageBox.warning(self, "Error", locales.get_text("av_daemon_error"))
+            QMessageBox.warning(self, locales.get_text("av_update_error_title"), locales.get_text("av_daemon_error"))
 
-    # ... (El resto de métodos scan_home, install_clamav, logs, etc. SIGUEN IGUAL) ...
-    # COPIA AQUÍ EL RESTO DE MÉTODOS DE TU ARCHIVO ANTERIOR
-    # (log, set_buttons_enabled, scan_home, scan_system, start_scan, update_db,
-    #  install_clamav, stop_scan, set_buttons_visible y los callbacks on_...)
+    # --- CONTROL ON-ACCESS (BOTÓN INFERIOR) ---
+    def toggle_on_access(self):
+        """Maneja el botón de Protección en Tiempo Real"""
+        currently_active = self.manager.is_on_access_active()
+        target_state = not currently_active
 
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        # AUTO-CORRECCIÓN: Asegurar que el demonio esté activo
+        if target_state:
+            # 1. Visual
+            self.toggle.blockSignals(True)
+            self.toggle.setChecked(True)
+            self.lbl_daemon_status.setText(locales.get_text("av_daemon_active"))
+            self.lbl_daemon_status.setStyleSheet("color: #2ecc71;")
+            self.toggle.blockSignals(False)
+
+            # 2. Sistema
+            if not self.manager.is_daemon_active():
+                self.manager.set_daemon_state(True)
+
+        # Configurar On-Access con la ruta elegida
+        success = self.manager.configure_on_access(target_state, watch_path=self.current_watch_path)
+
+        # Espera de seguridad para systemd
+        import time
+        time.sleep(2)
+
+        QApplication.restoreOverrideCursor()
+
+        if success:
+            self.check_status()
+
+            if target_state:
+                # Verificar si arrancó
+                if self.manager.is_on_access_active():
+                    QMessageBox.information(self,
+                                            locales.get_text("msg_info"),
+                                            locales.get_text("av_path_active").format(self.current_watch_path))
+                else:
+                    # Fallo silencioso (logs)
+                    QMessageBox.warning(self,
+                                        locales.get_text("msg_warning"),
+                                        "El servicio no arrancó. Revisa journalctl.")
+        else:
+            self.check_status()
+            QMessageBox.critical(self,
+                                 locales.get_text("av_install_error_title"),
+                                 locales.get_text("oa_config_error"))
+
+    def change_watch_path(self):
+        # Si está activo, avisar que hay que desactivar primero
+        if self.manager.is_on_access_active():
+            QMessageBox.warning(self,
+                                locales.get_text("msg_warning"),
+                                locales.get_text("av_path_warn"))
+            return
+
+        # Abrir selector de carpetas
+        folder = QFileDialog.getExistingDirectory(self,
+                                                  locales.get_text("av_path_dialog"),
+                                                  self.current_watch_path)
+
+        if folder:
+            self.current_watch_path = folder
+            self.lbl_oa_path.setText(folder)
+
+    # --- HELPERS DE UI ---
     def log(self, text):
         self.log_output.append(text)
         sb = self.log_output.verticalScrollBar()
@@ -183,8 +345,24 @@ class AntivirusTab(QWidget):
         self.btn_scan_home.setEnabled(enabled)
         self.btn_scan_sys.setEnabled(enabled)
         self.btn_update.setEnabled(enabled)
-        # No tocamos btn_install aquí porque se gestiona en check_status
+        self.btn_oa_toggle.setEnabled(enabled)
+        self.btn_change_path.setEnabled(enabled) # También bloqueamos el cambio de ruta
 
+    def set_buttons_visible(self, scanning):
+        if scanning:
+            self.btn_scan_home.hide()
+            self.btn_scan_sys.hide()
+            self.btn_update.hide()
+            self.btn_stop.show()
+            self.btn_stop.setEnabled(True)
+            self.btn_stop.setText("🛑 " + locales.get_text("av_btn_stop"))
+        else:
+            self.btn_scan_home.show()
+            self.btn_scan_sys.show()
+            self.btn_update.show()
+            self.btn_stop.hide()
+
+    # --- ACCIONES DE WORKERS ---
     def scan_home(self):
         self.start_scan(QDir.homePath())
 
@@ -237,20 +415,6 @@ class AntivirusTab(QWidget):
             self.installer_worker.log_signal.connect(self.log)
             self.installer_worker.finished_signal.connect(self.on_install_finished)
             self.installer_worker.start()
-
-    def set_buttons_visible(self, scanning):
-        if scanning:
-            self.btn_scan_home.hide()
-            self.btn_scan_sys.hide()
-            self.btn_update.hide()
-            self.btn_stop.show()
-            self.btn_stop.setEnabled(True)
-            self.btn_stop.setText("🛑 " + locales.get_text("av_btn_stop"))
-        else:
-            self.btn_scan_home.show()
-            self.btn_scan_sys.show()
-            self.btn_update.show()
-            self.btn_stop.hide()
 
     # --- CALLBACKS ---
     def on_scan_finished(self, success, infected_count):

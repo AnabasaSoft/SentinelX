@@ -162,25 +162,134 @@ class AntivirusManager:
             return "Unknown"
 
     def is_daemon_active(self):
-        """Comprueba si clamav-daemon está corriendo"""
+        """Comprueba si clamav-daemon o su socket están corriendo"""
         try:
-            # systemctl is-active devuelve 0 si está activo
-            res = subprocess.run(
+            # Verificamos el servicio principal
+            res_svc = subprocess.run(
                 ["systemctl", "is-active", "--quiet", "clamav-daemon"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            # Verificamos también el socket (importante en Arch/Manjaro)
+            res_sock = subprocess.run(
+                ["systemctl", "is-active", "--quiet", "clamav-daemon.socket"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+
+            # Consideramos activo si cualquiera de los dos está vivo
+            return (res_svc.returncode == 0) or (res_sock.returncode == 0)
+        except:
+            return False
+
+    def set_daemon_state(self, enable: bool):
+        """Activa/Desactiva Servicio Y Socket simultáneamente"""
+        try:
+            # Lista de unidades a controlar
+            units = ["clamav-daemon.service", "clamav-daemon.socket"]
+
+            if enable:
+                # 1. Desbloquear
+                cmd_unmask = ["pkexec", "systemctl", "unmask"] + units
+                subprocess.run(cmd_unmask, stderr=subprocess.DEVNULL)
+
+                # 2. Habilitar y arrancar AMBOS
+                cmd_enable = ["pkexec", "systemctl", "enable", "--now"] + units
+                subprocess.run(cmd_enable, check=True)
+
+                # 3. Esperar un segundo para que systemd respire (evita falsos negativos)
+                import time
+                time.sleep(1)
+
+            else:
+                # Deshabilitar y parar AMBOS
+                cmd_disable = ["pkexec", "systemctl", "disable", "--now"] + units
+                subprocess.run(cmd_disable, check=True)
+
+            return True
+
+        except subprocess.CalledProcessError as e:
+            print(f"Error cambiando estado daemon: {e}")
+            return False
+
+    def get_clamd_conf_path(self):
+        """Detecta la ubicación del archivo de configuración de ClamAV"""
+        # Posibles rutas estándar
+        paths = [
+            "/etc/clamav/clamd.conf",       # Debian/Ubuntu
+            "/etc/clamd.d/scan.conf",       # Fedora/CentOS
+            "/etc/clamd.conf"               # Arch/Manjaro
+        ]
+        for p in paths:
+            if os.path.exists(p):
+                return p
+        return None
+
+    def is_on_access_active(self):
+        """Verifica si el servicio clamonacc está corriendo"""
+        try:
+            # El servicio suele llamarse 'clamav-clamonacc' o simplemente 'clamonacc'
+            res = subprocess.run(
+                ["systemctl", "is-active", "--quiet", "clamav-clamonacc"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            if res.returncode == 0: return True
+
+            # Intento alternativo (algunas distros lo llaman diferente)
+            res = subprocess.run(
+                ["systemctl", "is-active", "--quiet", "clamonacc"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
             return res.returncode == 0
         except:
             return False
 
-    def set_daemon_state(self, enable: bool):
-        """Activa/Desactiva el servicio con pkexec"""
-        action = "enable --now" if enable else "disable --now"
-        cmd = ["pkexec", "systemctl"] + action.split() + ["clamav-daemon"]
+    def configure_on_access(self, enable: bool, watch_path="/home"):
+        conf_path = self.get_clamd_conf_path()
+        if not conf_path:
+            print("Error: No se encontró clamd.conf")
+            return False
+
+        helper = "/usr/local/bin/sentinelx-helper"
 
         try:
-            subprocess.run(cmd, check=True)
+            if enable:
+                # 1. Configurar archivo (Esto llamará al helper v7 corregido)
+                subprocess.run(["pkexec", helper, "enable-on-access", conf_path, watch_path], check=True)
+
+                # 2. Reiniciar el demonio principal
+                subprocess.run(["pkexec", "systemctl", "restart", "clamav-daemon"], check=True)
+
+                # 3. ESPERA ACTIVA (Wait loop)
+                print("Esperando a que ClamAV Daemon esté listo...")
+                import time
+                max_retries = 30
+                daemon_ready = False
+
+                for _ in range(max_retries):
+                    res = subprocess.run(["systemctl", "is-active", "clamav-daemon"], stdout=subprocess.DEVNULL)
+                    # Chequeamos socket en rutas comunes de Linux
+                    socket_exists = os.path.exists("/run/clamav/clamd.ctl") or \
+                                    os.path.exists("/var/run/clamav/clamd.ctl") or \
+                                    os.path.exists("/run/clamd.scan/clamd.sock") # Ruta Fedora
+
+                    if res.returncode == 0 and socket_exists:
+                        daemon_ready = True
+                        break
+                    time.sleep(1)
+
+                if not daemon_ready:
+                    print("Error: Tiempo de espera agotado. ClamAV Daemon no arrancó a tiempo.")
+                    return False
+
+                # 4. Ahora sí, arrancamos el vigilante
+                subprocess.run(["pkexec", "systemctl", "enable", "--now", "clamav-clamonacc"], check=True)
+
+            else:
+                subprocess.run(["pkexec", "systemctl", "disable", "--now", "clamav-clamonacc"], check=True)
+                subprocess.run(["pkexec", helper, "disable-on-access", conf_path], check=True)
+                subprocess.run(["pkexec", "systemctl", "restart", "clamav-daemon"], check=True)
+
             return True
-        except:
+
+        except Exception as e:
+            print(f"Error configurando On-Access: {e}")
             return False

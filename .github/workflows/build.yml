@@ -51,6 +51,7 @@ jobs:
             --windowed \
             --name "SentinelX" \
             --add-data "SentinelX-Icon-512.png:." \
+            --add-data "lang:lang" \
             --hidden-import "PySide6" \
             SentinelX.py
 

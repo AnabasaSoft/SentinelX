@@ -1,137 +1,183 @@
-<p align="center">
-  <img src="https://github.com/danitxu79/visagevault/raw/master/visagevault.png" alt="Logo de VisageVault">
-</p>
+<div align="center">
+  <a href="https://github.com/danitxu79/SentinelX">
+    <img src="https://raw.githubusercontent.com/danitxu79/SentinelX/main/AnabasaSoft.png" width="600" alt="AnabasaSoft Logo">
+  </a>
 
-# 📸 VisageVault
+  <br><br>
 
-**VisageVault** es un gestor de fotografías y vídeos inteligente, local, privado y ahora con soporte para **Google Drive**. Organiza tu colección multimedia por fechas automáticamente y utiliza reconocimiento facial avanzado para agrupar a las personas, permitiéndote etiquetar y encontrar recuerdos rápidamente.
+  <a href="https://github.com/danitxu79/SentinelX">
+    <img src="https://raw.githubusercontent.com/danitxu79/SentinelX/main/SentinelX-Logo.png" width="250" alt="SentinelX Logo">
+  </a>
+
+  <h1>SentinelX</h1>
+
+  <p>
+    <b>Tu Suite de Seguridad para Linux. Firewall Inteligente & Antivirus en Tiempo Real.</b>
+  </p>
+
+  <p>
+    <a href="https://www.python.org/">
+      <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white" alt="Python">
+    </a>
+    <a href="https://doc.qt.io/qtforpython/">
+      <img src="https://img.shields.io/badge/GUI-PySide6%20(Qt6)-green?logo=qt&logoColor=white" alt="Qt6">
+    </a>
+    <a href="https://aur.archlinux.org/packages/sentinelx-bin">
+      <img src="https://img.shields.io/aur/version/sentinelx-bin?color=purple&label=AUR&logo=arch-linux" alt="AUR Version">
+    </a>
+    <a href="#-licencia">
+      <img src="https://img.shields.io/badge/License-Dual%20(LGPLv3%20%2F%20Commercial)-orange" alt="License">
+    </a>
+    <a href="https://www.kernel.org/">
+      <img src="https://img.shields.io/badge/Platform-Linux-black?logo=linux&logoColor=white" alt="Platform Linux">
+    </a>
+  </p>
+</div>
 
 ---
 
-## ✨ Novedades de la Versión
-
-Esta actualización transforma VisageVault en un gestor híbrido (Local + Nube) y mejora la estructura interna:
-
-* **☁️ Integración con Google Drive:** Nueva pestaña **"Nube"**. Navega por tus copias de seguridad en la nube (incluyendo la sección "Ordenadores" de Google Fotos/Drive) sin descargar todos los archivos.
-* **📅 Organización Temporal en la Nube:** Visualiza tus fotos de Drive organizadas automáticamente por **Año y Mes**, igual que en tu disco local.
-* **🚀 Caché Unificada e Inteligente:** Nuevo sistema de archivos centralizado en `visagevault_cache`.
-    * **Caché de Miniaturas de Drive:** Las miniaturas de la nube se guardan en disco (`drive_snapshot_cache`) para que la carga sea **instantánea** en futuras sesiones y no consuma internet.
-    * **Limpieza Automática:** Sistema de auto-reparación de descargas corruptas.
-* **🔍 Navegación Mejorada:**
-    * **Vista Previa Rápida:** Doble clic para ver fotos (Local y Nube) en pantalla completa.
-    * **Cierre Rápido:** Tecla `ESC` para cerrar vistas previas.
-    * **Filtro de Carpetas Propias:** Algoritmo inteligente para encontrar tu carpeta "Mi Ordenador" en Drive filtrando carpetas compartidas no deseadas.
-* **🖱️ Interacción Unificada:** La selección múltiple, el zoom con `Ctrl`+`Rueda` y la navegación funcionan idéntico en Local y Nube.
-* Añadido buscador de fotografías duplicadas
-* Añadido caja fuerte
-* **🔄 Auto-Refresco (Watchdog):** La aplicación detecta automáticamente si añades, borras o modificas fotos en tu carpeta mientras está abierta y actualiza la galería al instante sin reiniciar.
-* **👁️ Corrección de Ojos Rojos:** Nueva herramienta en el menú contextual (clic derecho) para detectar y corregir ojos rojos en tus fotos automáticamente.
-* **⚡ Rendimiento en Personas:** Implementado un sistema de **caché de caras en disco**. La primera vez detecta las caras, pero las siguientes veces la carga de la pestaña "Personas" es instantánea, incluso con archivos RAW pesados.
-* **Soporte RAW Avanzado:** Visualización, carga de miniaturas y reconocimiento facial en archivos RAW comunes (.NEF, .CR2, .ARW, etc.) gracias a `rawpy`.
-* **Gestión de Metadatos Persistente:** Opción de **Cambiar Fecha (Mover)** que guarda el cambio en el archivo físico (EXIF para JPG, fecha de modificación para Vídeos/RAW).
-* **Gestión de Visibilidad:** Opción para **Ocultar/Restaurar** archivos de la vista principal y **Eliminar** archivos físicamente del disco.
-* **Selección Robusta:** Selección de rango con **Shift + Clic**, selección múltiple con **Ctrl + Clic**, y selección por arrastre.
+**SentinelX** es una interfaz gráfica (GUI) moderna diseñada para simplificar la seguridad en Linux. Pensada para usuarios que vienen de otros sistemas operativos o que prefieren no usar la terminal, SentinelX unifica la gestión del cortafuegos (`firewalld`/`ufw`) y la protección contra malware (`ClamAV`) en una experiencia robusta y accesible.
 
 ---
 
-## 📜 Licencia
+## ✨ Características Principales
+
+### 🔥 Gestión de Firewall Avanzada
+* **🕵️ Detección Inteligente de Red:** Monitoriza tu conexión y te permite clasificar redes automáticamente (Casa/Pública) para ajustar la seguridad al instante.
+* **🔌 Control de Puertos (Entrada/Salida):** Abre o bloquea puertos fácilmente con una base de datos de nombres personalizados para recordar qué es cada regla.
+* **📦 Filtrado por Aplicaciones:** Permite o bloquea servicios completos (Steam, SSH, HTTP) sin necesidad de saber los puertos técnicos.
+* **🔄 Multi-Backend:** Funciona nativamente tanto con **Firewalld** (Fedora, Manjaro, OpenSUSE) como con **UFW** (Ubuntu, Debian, Mint).
+
+### 🦠 Protección Antivirus (ClamAV)
+* **🛡️ Protección en Tiempo Real (On-Access):** Vigila carpetas críticas (configurable) y bloquea el acceso a archivos infectados al instante usando `clamonacc`.
+* **🚀 Control del Daemon:** Gestión inteligente de los servicios en segundo plano para equilibrar rendimiento y seguridad.
+* **🔍 Escaneo Flexible:** Análisis bajo demanda de carpetas o sistema completo con logs en tiempo real y control de parada.
+* **⚙️ Gestión Automática:** Detección e instalación automática del motor y firmas si no están presentes.
+
+### 🚀 Experiencia de Usuario (UX)
+* **🔐 Smart Polkit (Auto-Privilegios):** Olvídate de escribir tu contraseña constantemente. SentinelX instala un sistema seguro de reglas (`polkit`) y scripts auxiliares para permitir la administración fluida sin comprometer la seguridad.
+* **🎨 Interfaz Moderna:** Desarrollada en Qt6 con temas Claro y Oscuro pulidos profesionalmente.
+* **🌍 Multi-idioma:** Disponible totalmente en Español e Inglés.
+
+---
+
+## 📸 Capturas de Pantalla
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/danitxu79/SentinelX/main/Captura01.png" alt="Captura de Pantalla SentinelX" width="800">
+</div>
+
+---
+
+## 📥 Instalación y Descarga
+
+Elige el método que mejor se adapte a tu distribución.
+
+### 🦅 Arch Linux / Manjaro (AUR)
+La forma recomendada para usuarios de Arch. El paquete se actualiza automáticamente.
+
+```bash
+yay -S sentinelx-bin
+# o
+pamac build sentinelx-bin
+```
+
+### 🎒 AppImage (Universal Portable)
+
+Funciona en cualquier distribución (Ubuntu, Fedora, OpenSUSE, etc.) sin instalación.
+
+1. Descarga el archivo `.AppImage` desde la sección **[Releases](https://github.com/danitxu79/SentinelX/releases)**.
+2. Dale permisos de ejecución:
+   ```bash
+   chmod +x SentinelX-*.AppImage
+   ```
+3. Haz doble clic para abrirlo.
+
+### 📦 Paquetes Nativos (.deb / .rpm)
+
+Disponibles en la sección **[Releases](https://github.com/danitxu79/SentinelX/releases)**.
+
+* **Debian/Ubuntu/Mint:** Descarga el `.deb` e instálalo con `sudo apt install ./archivo.deb`.
+* **Fedora/RHEL/Suse:** Descarga el `.rpm` e instálalo con `sudo dnf install ./archivo.rpm`.
+
+---
+
+## 👨‍💻 Ejecutar desde Código Fuente (Para Desarrolladores)
+
+Si quieres contribuir o modificar el código, sigue estos pasos.
+
+**Requisitos:**
+
+* Python 3.10 o superior.
+* Un gestor de firewall (`firewalld` o `ufw`).
+* Librerías de sistema para Qt6.
+
+**Pasos:**
+
+1. **Clonar el repositorio:**
+
+   ```bash
+   git clone https://github.com/danitxu79/SentinelX.git
+   cd SentinelX
+   ```
+
+2. **Crear un entorno virtual (Recomendado):**
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. **Instalar dependencias:**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Ejecutar la aplicación:**
+
+   ```bash
+   python SentinelX.py
+   ```
+
+> **Nota sobre el primer inicio:** SentinelX detectará si faltan permisos de sistema y te ofrecerá instalar una regla de seguridad automáticamente. Esto es necesario para gestionar el firewall y el antivirus de forma fluida sin pedir contraseñas constantemente.
+
+---
+
+## 🛠️ Tecnologías
+
+* **Lenguaje:** Python 3
+* **Interfaz Gráfica:** PySide6 (Qt for Python)
+* **Seguridad:** Integración con `polkit` y scripts auxiliares seguros en `/usr/local/bin`.
+* **Motores:** `firewalld`, `ufw`, `clamav` (`clamd`, `clamonacc`), `nmcli`.
+* **Persistencia:** JSON para configuración de usuario en `~/.config/SentinelX`.
+
+---
+
+## 📄 Licencia
 
 Este proyecto se ofrece bajo un modelo de **Doble Licencia (Dual License)**:
 
-1.  **LGPLv3:** Ideal para proyectos de código abierto. Si usas esta biblioteca (especialmente si la modificas), debes cumplir con las obligaciones de la LGPLv3.
-2.  **Comercial (Privativa):** Si los términos de la LGPLv3 no se ajustan a tus necesidades (por ejemplo, para software propietario de código cerrado), por favor contacta al autor para adquirir una licencia comercial.
+1. **LGPLv3 (GNU Lesser General Public License v3):**
+   Ideal para proyectos de código abierto. Si usas esta biblioteca (especialmente si la modificas), debes cumplir con las obligaciones de la LGPLv3. Esto asegura que las mejoras al núcleo open-source se compartan con la comunidad.
 
-Para más detalles, consulta el archivo `LICENSE` o la cabecera de `visagevault.py`.
+2. **Comercial (Privativa):**
+   Si los términos de la LGPLv3 no se ajustan a tus necesidades (por ejemplo, para incluir este software en productos propietarios de código cerrado sin revelar el código fuente), por favor contacta al autor para adquirir una licencia comercial.
 
----
-
-## 🛠️ Requisitos del Sistema
-
-Para ejecutar VisageVault, necesitas **Python 3.11 o superior**.
-
-### Dependencias de Sistema (Compilación)
-
-La librería `face_recognition` y `rawpy` requieren herramientas de compilación de C++ instaladas:
-
-* **Windows:** Visual Studio con "Desarrollo para el escritorio con C++".
-* **Linux:** `cmake`, `gcc`, `libarchive-tools` (para empaquetado).
-  ```bash
-  sudo apt install build-essential cmake libopenblas-dev liblapack-dev ffmpeg libarchive-tools
-  ```
-* **Mac:** Xcode command line tools.
+Para más detalles, consulta el archivo `LICENSE` incluido en este repositorio.
 
 ---
 
-### Librerías Python
+## 📬 Contacto y Autor
 
-Asegúrate de que tu `requirements.txt` esté actualizado. Las dependencias clave son:
+Este proyecto ha sido desarrollado con ❤️ y mucho café por:
 
-  * `PySide6` (Interfaz gráfica)
-  * `face_recognition` (IA Facial)
-  * `scikit-learn` (Clustering de caras)
-  * `watchdog` (Monitorización de archivos)
-  * `rawpy` (Soporte RAW)
-  * `opencv-python-headless` (Miniaturas de vídeo y Ojos Rojos)
-  * `piexif` (Escritura EXIF)
-  * **Google API Client** (NUEVO: `google-api-python-client`, `google-auth-oauthlib`)
-  * `numpy`, `Pillow`, `requests`
+**Daniel Serrano Armenta (AnabasaSoft)**
+
+* 📧 **Email:** [dani.eus79@gmail.com](mailto:dani.eus79@gmail.com)
+* 🐙 **GitHub:** [github.com/danitxu79](https://github.com/danitxu79/)
+* 🌐 **Portafolio:** [danitxu79.github.io](https://danitxu79.github.io/)
 
 ---
 
-## 🚀 Instalación
-
-1.  **Clonar el repositorio:**
-
-    ```bash
-    git clone https://github.com/danitxu79/visagevault.git
-    cd visagevault
-    ```
-
-2.  **Instalar dependencias:**
-    Se recomienda usar un entorno virtual (`venv`).
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3.  **Configurar Google Drive (Opcional):**
-    Para usar la pestaña Nube, necesitarás un archivo `client_secrets.json` en la raíz del proyecto (obtenido de Google Cloud Console).
-
-4.  **Ejecutar la aplicación:**
-
-    ```bash
-    python visagevault.py
-    ```
-
----
-
-## 📖 Guía de Uso Rápida
-
-### Navegación y Vistas
-
-  * **Árbol de Fechas:** Las secciones de **Años/Meses** muestran solo archivos visibles. La sección **Ocultas** muestra los archivos que has archivado y permite Restaurarlos o Eliminarlos.
-  * **Auto-Refresco:** Si copias fotos nuevas a tu carpeta vigilada, aparecerán automáticamente en la aplicación tras unos segundos.
-  * **Pestaña Nube:** Inicia sesión con Google para explorar tus copias de seguridad. Usa el botón "Cambiar Carpeta" para seleccionar "Mi Ordenador" u otras carpetas de Drive.
-
-### Menú Contextual (Clic Derecho)
-
-Selecciona uno o varios elementos y haz clic derecho para acceder a las opciones:
-
-| Opción | Función |
-| :--- | :--- |
-| **Cambiar Fecha (Mover)** | Abre un diálogo para reasignar la fecha. Actualiza la BD y los metadatos del archivo. |
-| **Corregir Ojos Rojos** | Detecta y corrige automáticamente los ojos rojos en las fotos seleccionadas. |
-| **Ocultar de la vista** | Archiva los archivos en la sección "Ocultas" sin borrarlos del disco. |
-| **Restaurar a la galería** | Devuelve los archivos ocultos a la vista principal (Años/Meses). |
-| **Eliminar del disco** | Borra permanentemente los archivos del disco duro y de la base de datos. |
-
-### Controles de Miniaturas
-
-| Acción | Comando |
-| :--- | :--- |
-| **Zoom Miniaturas** | `Ctrl` + `+`/`-` |
-| **Vista Previa Grande** | **Doble Clic** |
-| **Cerrar Vista Previa** | Tecla `ESC`  |
-| **Selección Múltiple** | `Ctrl` + `Clic` |
-| **Selección de Rango** | `Shift` + `Clic` |
-| **Selección por Arrastre** | Clic izquierdo y arrastrar sobre el fondo gris |
+*Si encuentras útil este proyecto, ¡no olvides darle una ⭐ en GitHub!*

@@ -109,7 +109,6 @@ Si quieres contribuir o modificar el código, sigue estos pasos.
 **Requisitos:**
 
 * Python 3.10 o superior.
-* Un gestor de firewall (`firewalld` o `ufw`).
 * Librerías de sistema para Qt6.
 
 **Pasos:**

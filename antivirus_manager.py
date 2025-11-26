@@ -1,6 +1,8 @@
 import shutil
 import subprocess
 import os
+import time
+from datetime import datetime
 from PySide6.QtCore import QThread, Signal
 
 # IMPORTANTE: Importamos el módulo de traducción
@@ -76,57 +78,60 @@ class InstallWorker(QThread):
 # --- HILO DE ESCANEO ---
 class ScanWorker(QThread):
     log_signal = Signal(str)
-    finished_signal = Signal(bool, int)
+    # CAMBIO: Ahora devuelve (Exito, Lista de rutas infectadas)
+    finished_signal = Signal(bool, list)
 
     def __init__(self, target_path):
         super().__init__()
         self.target_path = target_path
-        self.process = None # Referencia al proceso para poder matarlo
+        self.process = None
         self.killed_by_user = False
 
     def run(self):
-        # USO DE LOCALES
         self.log_signal.emit(locales.get_text("log_scan_start").format(self.target_path))
 
+        # CAMBIO: Quitamos --move. Solo detectamos.
         cmd = ["clamscan", "-r", self.target_path]
 
+        infected_files = [] # Lista para guardar las rutas
+
         try:
-            # Guardamos la referencia en self.process
             self.process = subprocess.Popen(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
             )
 
-            infected_count = 0
-
-            # Leemos línea a línea
             for line in self.process.stdout:
                 line = line.strip()
                 self.log_signal.emit(line)
-                if "FOUND" in line:
-                    infected_count += 1
+
+                # PARSEO INTELIGENTE:
+                # Salida típica: /home/user/virus.txt: Eicar-Test-Signature FOUND
+                if " FOUND" in line:
+                    # Sepamos por ": " y cogemos la primera parte (la ruta)
+                    parts = line.split(": ")
+                    if len(parts) > 0:
+                        file_path = parts[0]
+                        infected_files.append(file_path)
 
             self.process.wait()
 
-            # Si fue matado por el usuario, no emitimos éxito ni fallo normal
             if self.killed_by_user:
                 self.log_signal.emit(locales.get_text("av_scan_stopped"))
-                self.finished_signal.emit(False, -1) # -1 indica cancelado
+                self.finished_signal.emit(False, [])
             else:
+                # 0 = Limpio, 1 = Virus encontrado
                 success = self.process.returncode in [0, 1]
-                self.finished_signal.emit(success, infected_count)
+                self.finished_signal.emit(success, infected_files)
 
         except Exception as e:
-            # Si el error fue porque lo matamos nosotros, lo ignoramos
             if not self.killed_by_user:
                 self.log_signal.emit(locales.get_text("log_critical_error").format(e))
-                self.finished_signal.emit(False, 0)
+                self.finished_signal.emit(False, [])
 
     def stop(self):
-        """Método para matar el proceso desde fuera"""
-        if self.process and self.process.poll() is None: # Si está corriendo
+        if self.process and self.process.poll() is None:
             self.killed_by_user = True
-            self.process.terminate() # Intentamos terminar suavemente
-            # self.process.kill() # Si terminate no funciona, usar kill
+            self.process.terminate()
 
 # --- HILO DE ACTUALIZACIÓN ---
 class UpdateWorker(QThread):
@@ -150,6 +155,12 @@ class UpdateWorker(QThread):
             self.finished_signal.emit(False)
 
 class AntivirusManager:
+    def __init__(self):
+        # Definimos la ruta de cuarentena en el home del usuario
+        self.quarantine_dir = os.path.expanduser("~/.sentinelx/quarantine")
+        if not os.path.exists(self.quarantine_dir):
+            os.makedirs(self.quarantine_dir)
+
     def is_installed(self):
         return shutil.which("clamscan") is not None
 
@@ -292,4 +303,107 @@ class AntivirusManager:
 
         except Exception as e:
             print(f"Error configurando On-Access: {e}")
+            return False
+
+    def move_to_quarantine(self, file_path):
+        """Mueve un archivo infectado a la carpeta segura y le quita permisos"""
+        if not os.path.exists(file_path):
+            return False
+
+        try:
+            # Nombre único: fecha_nombreoriginal
+            timestamp = int(time.time())
+            filename = os.path.basename(file_path)
+            new_name = f"{timestamp}_{filename}"
+            dest_path = os.path.join(self.quarantine_dir, new_name)
+
+            # 1. Mover
+            # Usamos shutil.move que funciona entre discos
+            shutil.move(file_path, dest_path)
+
+            # 2. Neutralizar (Quitar permisos de ejecución y escritura)
+            # 0o400 = Solo lectura para el dueño (r--------)
+            os.chmod(dest_path, 0o400)
+
+            # 3. Guardar metadatos (Opcional, para saber de dónde vino)
+            # Creamos un archivo .meta con la ruta original
+            with open(dest_path + ".meta", "w") as f:
+                f.write(file_path)
+
+            return True
+        except Exception as e:
+            print(f"Error cuarentena: {e}")
+            return False
+
+    def get_quarantine_files(self):
+        """Devuelve lista de diccionarios con info de archivos en cuarentena"""
+        files = []
+        if not os.path.exists(self.quarantine_dir):
+            return files
+
+        for name in os.listdir(self.quarantine_dir):
+            if name.endswith(".meta"): continue # Ignorar metadatos
+
+            full_path = os.path.join(self.quarantine_dir, name)
+
+            # Intentar leer origen
+            original_path = "Desconocido"
+            meta_path = full_path + ".meta"
+            if os.path.exists(meta_path):
+                with open(meta_path, "r") as f:
+                    original_path = f.read().strip()
+
+            # Parsear fecha del nombre (timestamp_nombre)
+            try:
+                ts = int(name.split("_")[0])
+                date_str = datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M')
+            except:
+                date_str = "Unknown"
+
+            files.append({
+                "id": name, # El nombre real en disco
+                "original_path": original_path,
+                "date": date_str
+            })
+        return files
+
+    def restore_file(self, file_id):
+        """Devuelve el archivo a su lugar original"""
+        quarantine_path = os.path.join(self.quarantine_dir, file_id)
+        meta_path = quarantine_path + ".meta"
+
+        if not os.path.exists(quarantine_path) or not os.path.exists(meta_path):
+            return False
+
+        try:
+            with open(meta_path, "r") as f:
+                original_dest = f.read().strip()
+
+            # Verificar si el directorio original aun existe
+            dest_dir = os.path.dirname(original_dest)
+            if not os.path.exists(dest_dir):
+                os.makedirs(dest_dir)
+
+            # Mover de vuelta
+            shutil.move(quarantine_path, original_dest)
+
+            # Restaurar permisos normales (Lectura/Escritura usuario)
+            os.chmod(original_dest, 0o644)
+
+            # Borrar meta
+            os.remove(meta_path)
+            return True
+        except Exception as e:
+            print(f"Error restaurando: {e}")
+            return False
+
+    def delete_quarantine_file(self, file_id):
+        """Borra definitivamente el archivo y su meta"""
+        path = os.path.join(self.quarantine_dir, file_id)
+        meta = path + ".meta"
+        try:
+            if os.path.exists(path): os.remove(path)
+            if os.path.exists(meta): os.remove(meta)
+            return True
+        except:
             return False

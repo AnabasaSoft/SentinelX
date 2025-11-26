@@ -58,6 +58,14 @@ class AntivirusTab(QWidget):
         # --- 2. BOTONES DE ACCIÓN (ESCANEO / UPDATE) ---
         btn_layout = QHBoxLayout()
 
+        self.btn_scan_file = QPushButton("📄 " + locales.get_text("av_btn_scan_file"))
+        self.btn_scan_file.setMinimumHeight(40)
+        self.btn_scan_file.clicked.connect(self.scan_file)
+
+        self.btn_scan_home = QPushButton("🏠 " + locales.get_text("av_btn_scan_home"))
+        self.btn_scan_home.setMinimumHeight(40)
+        self.btn_scan_home.clicked.connect(self.scan_home)
+
         self.btn_scan_home = QPushButton("🏠 " + locales.get_text("av_btn_scan_home"))
         self.btn_scan_home.setMinimumHeight(40)
         self.btn_scan_home.clicked.connect(self.scan_home)
@@ -73,10 +81,12 @@ class AntivirusTab(QWidget):
         # Botón STOP (Oculto por defecto)
         self.btn_stop = QPushButton("🛑 " + locales.get_text("av_btn_stop"))
         self.btn_stop.setMinimumHeight(40)
+        self.btn_stop.setFixedWidth(250)
         self.btn_stop.setStyleSheet("background-color: #d32f2f; color: white; font-weight: bold;")
         self.btn_stop.clicked.connect(self.stop_scan)
         self.btn_stop.hide()
 
+        btn_layout.addWidget(self.btn_scan_file)
         btn_layout.addWidget(self.btn_scan_home)
         btn_layout.addWidget(self.btn_scan_sys)
         btn_layout.addWidget(self.btn_update)
@@ -342,6 +352,7 @@ class AntivirusTab(QWidget):
         sb.setValue(sb.maximum())
 
     def set_buttons_enabled(self, enabled):
+        self.btn_scan_file.setEnabled(enabled)
         self.btn_scan_home.setEnabled(enabled)
         self.btn_scan_sys.setEnabled(enabled)
         self.btn_update.setEnabled(enabled)
@@ -350,6 +361,7 @@ class AntivirusTab(QWidget):
 
     def set_buttons_visible(self, scanning):
         if scanning:
+            self.btn_scan_file.hide()
             self.btn_scan_home.hide()
             self.btn_scan_sys.hide()
             self.btn_update.hide()
@@ -357,6 +369,7 @@ class AntivirusTab(QWidget):
             self.btn_stop.setEnabled(True)
             self.btn_stop.setText("🛑 " + locales.get_text("av_btn_stop"))
         else:
+            self.btn_scan_file.show()
             self.btn_scan_home.show()
             self.btn_scan_sys.show()
             self.btn_update.show()
@@ -365,6 +378,17 @@ class AntivirusTab(QWidget):
     # --- ACCIONES DE WORKERS ---
     def scan_home(self):
         self.start_scan(QDir.homePath())
+
+    def scan_file(self):
+        # Usamos getOpenFileName para seleccionar un único archivo
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            locales.get_text("av_file_dialog"),
+            QDir.homePath() # Empezamos en /home
+        )
+
+        if file_path:
+            self.start_scan(file_path)
 
     def scan_system(self):
         QMessageBox.information(self,
@@ -378,7 +402,9 @@ class AntivirusTab(QWidget):
         self.progress.show()
         self.set_buttons_visible(scanning=True)
 
+        # CAMBIO: Ya no pasamos quarantine_path, el worker no lo necesita
         self.worker = ScanWorker(path)
+
         self.worker.log_signal.connect(self.log)
         self.worker.finished_signal.connect(self.on_scan_finished)
         self.worker.start()
@@ -417,21 +443,33 @@ class AntivirusTab(QWidget):
             self.installer_worker.start()
 
     # --- CALLBACKS ---
-    def on_scan_finished(self, success, infected_count):
+    def on_scan_finished(self, success, infected_files):
         self.progress.hide()
         self.set_buttons_visible(scanning=False)
         self.log("-" * 30)
 
-        if infected_count == -1: return
+        # infected_files es ahora una LISTA []
+        infected_count = len(infected_files)
 
-        if not success:
-            self.log(locales.get_text("av_scan_cancel_log"))
-        elif infected_count == 0:
+        if not success and not self.worker.killed_by_user:
+             self.log(locales.get_text("av_scan_cancel_log"))
+             return
+
+        if infected_count == 0:
             msg = locales.get_text("av_scan_clean")
             self.log(msg)
             QMessageBox.information(self, locales.get_text("av_scan_clean_title"), msg)
         else:
-            msg = locales.get_text("av_scan_infected").format(infected_count)
+            # --- MOVIMIENTO INTELIGENTE ---
+            moved_count = 0
+            for file_path in infected_files:
+                self.log(f"🛡️ Moviendo a cuarentena: {file_path}")
+                # Llamamos a nuestro manager que SÍ crea el archivo .meta
+                if self.manager.move_to_quarantine(file_path):
+                    moved_count += 1
+
+            # Mensaje final
+            msg = locales.get_text("av_scan_infected").format(moved_count)
             self.log(msg)
             QMessageBox.warning(self, locales.get_text("av_scan_threat_title"), msg)
 

@@ -57,7 +57,7 @@
 ### 🚀 Experiencia de Usuario (UX)
 * **🔐 Smart Polkit (Auto-Privilegios):** Olvídate de escribir tu contraseña constantemente. SentinelX instala un sistema seguro de reglas (`polkit`) y scripts auxiliares para permitir la administración fluida sin comprometer la seguridad.
 * **🎨 Interfaz Moderna:** Desarrollada en Qt6 con temas Claro y Oscuro pulidos profesionalmente.
-* **🌍 Multi-idioma:** Disponible totalmente en Español e Inglés.
+* **🌍 Multi-idioma:** Disponible totalmente en Español, Inglés y Euskera.
 
 ---
 

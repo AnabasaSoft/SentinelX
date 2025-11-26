@@ -16,7 +16,7 @@ for everyone.
 :github:       https://github.com/danitxu79/SentinelX
 :copyright:    (c) 2025 Daniel Serrano Armenta. All rights reserved.
 :license:      Dual License (LGPLv3 / Commercial)
-:version:      1.0
+:version:      1.2
 
 ===============================================================================
 LICENSE NOTICE
@@ -52,17 +52,21 @@ from polkit_manager import PolkitManager
 
 # --- Módulos de lógica ---
 from config_manager import ConfigManager
-import locales  # Importamos el módulo de textos
+import locales
 
-# Cargamos el idioma ANTES de importar las pestañas para que cojan el texto correcto
+# --- CARGA DE IDIOMA MEJORADA ---
 cfg = ConfigManager()
 selected_lang = cfg.get_language()
-locales.current_lang = selected_lang # Seteamos la variable global del módulo locales
+
+# Ahora llamamos a la función de carga
+locales.load_language(selected_lang)
 
 # --- Módulos de UI ---
 from tab_firewall import FirewallTab
 from tab_antivirus import AntivirusTab
 from tab_config import ConfigTab
+from tab_help import HelpTab
+from tab_quarantine import QuarantineTab
 
 # -----------------------------------------------------
 # ESTILO OSCURO (MODERNO)
@@ -212,6 +216,11 @@ DARK_STYLE_SHEET = """
         border: 1px solid #2E7D32;
         border-radius: 8px;
     }
+    QTextBrowser {
+        border: none;
+        /* El color de fondo lo dejamos transparente en el código Python,
+           pero el color del texto lo heredará de QWidget */
+    }
 """
 
 # -----------------------------------------------------
@@ -347,6 +356,11 @@ LIGHT_STYLE_SHEET = """
         border: 1px solid #C8E6C9;
         border-radius: 8px;
     }
+    QTextBrowser {
+        border: none;
+        /* El color de fondo lo dejamos transparente en el código Python,
+           pero el color del texto lo heredará de QWidget */
+    }
 """
 
 THEMES = {
@@ -369,7 +383,9 @@ class MainWindow(QMainWindow):
         # Usamos las claves de traducción para los títulos de pestañas
         self.tabs.addTab(FirewallTab(), locales.get_text("tab_firewall"))
         self.tabs.addTab(AntivirusTab(), locales.get_text("tab_antivirus"))
+        self.tabs.addTab(QuarantineTab(), locales.get_text("quarantine_title"))
         self.tabs.addTab(ConfigTab(), locales.get_text("tab_config"))
+        self.tabs.addTab(HelpTab(), locales.get_text("tab_help"))
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

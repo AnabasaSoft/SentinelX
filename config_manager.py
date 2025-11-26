@@ -111,3 +111,12 @@ class ConfigManager:
     def set_polkit_installed(self, installed=True):
         self.config["polkit_installed"] = installed
         self.save_config()
+
+    def get_polkit_version(self):
+        """Devuelve la versión de la regla instalada. 0 si no existe."""
+        return self.config.get("polkit_version", 0)
+
+    def set_polkit_version(self, version):
+        """Guarda la versión actual"""
+        self.config["polkit_version"] = version
+        self.save_config()

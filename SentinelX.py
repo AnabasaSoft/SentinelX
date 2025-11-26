@@ -16,7 +16,7 @@ for everyone.
 :github:       https://github.com/danitxu79/SentinelX
 :copyright:    (c) 2025 Daniel Serrano Armenta. All rights reserved.
 :license:      Dual License (LGPLv3 / Commercial)
-:version:      0.2 (Beta)
+:version:      0.3 (Beta)
 
 ===============================================================================
 LICENSE NOTICE
@@ -302,13 +302,22 @@ if __name__ == "__main__":
     else:
         app.setStyleSheet(THEMES["dark"])
 
-    # --- VERIFICACIÓN POLKIT (LÓGICA NUEVA) ---
-    # Consultamos si ya lo tenemos marcado como instalado en config.json
-    if not cfg.get_polkit_installed():
+    # --- VERIFICACIÓN POLKIT INTELIGENTE ---
+    from polkit_manager import PolkitManager
+    polkit_mgr = PolkitManager()
+
+    installed_ver = cfg.get_polkit_version()
+    required_ver = polkit_mgr.get_current_version()
+
+    # Si la versión instalada es MENOR que la requerida, forzamos update
+    if installed_ver < required_ver:
         msg_box = QMessageBox()
         msg_box.setWindowTitle(locales.get_text("polkit_title"))
-        msg_box.setText(locales.get_text("polkit_msg"))
-        msg_box.setIcon(QMessageBox.Question)
+
+        # Formateamos el mensaje con el número de versión nueva
+        msg_text = locales.get_text("polkit_msg").format(required_ver)
+        msg_box.setText(msg_text)
+        msg_box.setIcon(QMessageBox.Information) # Icono Info (menos agresivo que Question)
 
         btn_yes = msg_box.addButton(locales.get_text("polkit_btn_yes"), QMessageBox.YesRole)
         btn_no = msg_box.addButton(locales.get_text("polkit_btn_no"), QMessageBox.NoRole)
@@ -317,19 +326,12 @@ if __name__ == "__main__":
         msg_box.exec()
 
         if msg_box.clickedButton() == btn_yes:
-            # Instanciamos el manager
-            from polkit_manager import PolkitManager
-            polkit_mgr = PolkitManager()
-
-            # Intentamos instalar
             if polkit_mgr.install_rule():
-                # ¡ÉXITO! Guardamos en la config para no volver a preguntar
-                cfg.set_polkit_installed(True)
+                # ¡ÉXITO! Guardamos la NUEVA versión (2)
+                cfg.set_polkit_version(required_ver)
                 QMessageBox.information(None, "SentinelX", locales.get_text("polkit_success"))
             else:
                 QMessageBox.warning(None, "SentinelX", locales.get_text("polkit_error"))
-
-    # -----------------------------------
 
     # Icono global y ventana
     base_dir = os.path.dirname(__file__)

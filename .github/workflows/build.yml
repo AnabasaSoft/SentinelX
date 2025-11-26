@@ -52,12 +52,8 @@ jobs:
             --windowed \
             --name "SentinelX" \
             --add-data "SentinelX-Icon-512.png:." \
-            --add-data "config.json:." \
             --hidden-import "PySide6" \
             SentinelX.py
-
-          # Nota: config.json se incluye por si acaso, aunque la app debería
-          # regenerarlo si no existe.
 
       # 5. Preparamos la estructura de carpetas estándar de Linux (AppDir)
       - name: Prepare AppDir

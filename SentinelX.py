@@ -16,7 +16,7 @@ for everyone.
 :github:       https://github.com/danitxu79/SentinelX
 :copyright:    (c) 2025 Daniel Serrano Armenta. All rights reserved.
 :license:      Dual License (LGPLv3 / Commercial)
-:version:      1.3
+:version:      1.4
 
 ===============================================================================
 LICENSE NOTICE
@@ -44,9 +44,9 @@ under one of the following two licenses:
 
 import sys
 import os
-from PySide6.QtWidgets import QApplication, QMainWindow, QTabWidget, QMessageBox
-from PySide6.QtGui import QIcon
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QApplication, QMainWindow, QTabWidget, QMessageBox, QSplashScreen)
+from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtCore import Qt, QEventLoop, QTimer
 
 from polkit_manager import PolkitManager
 
@@ -390,48 +390,84 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    # --- Cargar config y estilos ---
+    # --- 1. SPLASH SCREEN (Pantalla de Carga) ---
+    # Calculamos ruta base (compatible con PyInstaller y Script)
+    if getattr(sys, 'frozen', False):
+        base_dir = sys._MEIPASS
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    splash_img_path = os.path.join(base_dir, "AnabasaSoft.png")
+    splash = None
+
+    if os.path.exists(splash_img_path):
+        # Crear y mostrar el Splash
+        pixmap = QPixmap(splash_img_path)
+
+        # Opcional: Si la imagen es gigante, la escalamos a algo razonable (ej: 600px ancho)
+        # pixmap = pixmap.scaledToWidth(600, Qt.SmoothTransformation)
+
+        splash = QSplashScreen(pixmap)
+        splash.setWindowFlag(Qt.WindowStaysOnTopHint) # Que se quede encima
+        splash.show()
+
+        # Forzamos a Qt a dibujar la imagen inmediatamente
+        app.processEvents()
+
+        # Esperamos 2 segundos (2000 ms) sin congelar el sistema
+        loop = QEventLoop()
+        QTimer.singleShot(2000, loop.quit)
+        loop.exec()
+
+    # --- 2. CARGA DE CONFIGURACIÓN ---
     cfg = ConfigManager()
     current_theme = cfg.get_theme()
+    selected_lang = cfg.get_language() # Cargar idioma guardado
 
+    # Cargar textos
+    locales.load_language(selected_lang)
+
+    # Cargar tema
     if current_theme in THEMES:
         app.setStyleSheet(THEMES[current_theme])
     else:
         app.setStyleSheet(THEMES["dark"])
 
-    # --- VERIFICACIÓN POLKIT INTELIGENTE ---
+    # --- 3. VERIFICACIÓN POLKIT ---
     from polkit_manager import PolkitManager
     polkit_mgr = PolkitManager()
 
     installed_ver = cfg.get_polkit_version()
     required_ver = polkit_mgr.get_current_version()
 
-    # Si la versión instalada es MENOR que la requerida, forzamos update
     if installed_ver < required_ver:
+        # Si hay splash, lo ocultamos temporalmente para mostrar el diálogo
+        # o dejamos que el diálogo salga encima (Qt lo gestiona bien).
+
         msg_box = QMessageBox()
         msg_box.setWindowTitle(locales.get_text("polkit_title"))
-
-        # Formateamos el mensaje con el número de versión nueva
         msg_text = locales.get_text("polkit_msg").format(required_ver)
         msg_box.setText(msg_text)
-        msg_box.setIcon(QMessageBox.Information) # Icono Info (menos agresivo que Question)
+        msg_box.setIcon(QMessageBox.Information)
 
         btn_yes = msg_box.addButton(locales.get_text("polkit_btn_yes"), QMessageBox.YesRole)
         btn_no = msg_box.addButton(locales.get_text("polkit_btn_no"), QMessageBox.NoRole)
         msg_box.setDefaultButton(btn_yes)
 
+        # Hacemos que el mensaje salga encima del splash si este existe
+        if splash:
+            msg_box.setWindowModality(Qt.ApplicationModal)
+
         msg_box.exec()
 
         if msg_box.clickedButton() == btn_yes:
             if polkit_mgr.install_rule():
-                # ¡ÉXITO! Guardamos la NUEVA versión (2)
                 cfg.set_polkit_version(required_ver)
                 QMessageBox.information(None, "SentinelX", locales.get_text("polkit_success"))
             else:
                 QMessageBox.warning(None, "SentinelX", locales.get_text("polkit_error"))
 
-    # Icono global y ventana
-    base_dir = os.path.dirname(__file__)
+    # --- 4. INICIO VENTANA PRINCIPAL ---
     icon_path = os.path.join(base_dir, "SentinelX-Icon-512.png")
     if os.path.exists(icon_path):
         app_icon = QIcon(icon_path)
@@ -439,5 +475,9 @@ if __name__ == "__main__":
 
     window = MainWindow()
     window.showMaximized()
+
+    # Cerrar el Splash cuando la ventana principal ya está lista
+    if splash:
+        splash.finish(window)
 
     sys.exit(app.exec())

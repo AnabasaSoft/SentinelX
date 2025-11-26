@@ -42,18 +42,18 @@ class AntivirusTab(QWidget):
 
         layout.addLayout(header_layout)
 
+        # Subtítulo Info
+        self.lbl_info = QLabel(locales.get_text("av_realtime_title"))
+        self.lbl_info.setStyleSheet("color: gray; font-size: 11px;")
+        self.lbl_info.setAlignment(Qt.AlignRight)
+        layout.addWidget(self.lbl_info)
+
         # Línea separadora
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)
         line.setStyleSheet("background-color: #cccccc;")
         layout.addWidget(line)
-
-        # Subtítulo Info
-        self.lbl_info = QLabel(locales.get_text("av_realtime_title"))
-        self.lbl_info.setStyleSheet("color: gray; font-size: 11px;")
-        self.lbl_info.setAlignment(Qt.AlignRight)
-        layout.addWidget(self.lbl_info)
 
         # --- 2. BOTONES DE ACCIÓN (ESCANEO / UPDATE) ---
         btn_layout = QHBoxLayout()

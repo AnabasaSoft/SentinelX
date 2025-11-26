@@ -16,7 +16,7 @@ for everyone.
 :github:       https://github.com/danitxu79/SentinelX
 :copyright:    (c) 2025 Daniel Serrano Armenta. All rights reserved.
 :license:      Dual License (LGPLv3 / Commercial)
-:version:      1.4
+:version:      1.4.1
 
 ===============================================================================
 LICENSE NOTICE

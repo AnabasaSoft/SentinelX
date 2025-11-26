@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                               QPushButton, QTextEdit, QProgressBar, QMessageBox, QFrame)
+                               QPushButton, QTextEdit, QProgressBar, QMessageBox, QFrame,
+                               QApplication)
 from PySide6.QtCore import Qt, QDir, QTimer
 from PySide6.QtGui import QFont, QColor
 

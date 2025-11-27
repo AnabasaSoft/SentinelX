@@ -207,5 +207,14 @@
     "h_links": "Useful links:",
     "h_portfolio": "🌐 My Portfolio",
     "h_github": "🐙 Source Code on GitHub",
-    "h_email": "📧 Contact: dani.eus79@gmail.com"
+    "h_email": "📧 Contact: dani.eus79@gmail.com",
+
+    "tray_restore": "Restore Window",
+    "tray_quit": "Quit Completely",
+    "tray_minimize_msg": "SentinelX is running in the background.",
+    "tray_minimize_title": "Minimized",
+
+    "cfg_behavior_title": "System Behavior",
+    "cfg_autostart": "Start SentinelX on system boot",
+    "cfg_start_min": "Start minimized to system tray"
 }

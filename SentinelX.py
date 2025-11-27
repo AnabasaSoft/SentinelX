@@ -16,7 +16,7 @@ for everyone.
 :github:       https://github.com/danitxu79/SentinelX
 :copyright:    (c) 2025 Daniel Serrano Armenta. All rights reserved.
 :license:      Dual License (LGPLv3 / Commercial)
-:version:      1.4.1
+:version:      1.4.2
 
 ===============================================================================
 LICENSE NOTICE
@@ -44,8 +44,9 @@ under one of the following two licenses:
 
 import sys
 import os
-from PySide6.QtWidgets import (QApplication, QMainWindow, QTabWidget, QMessageBox, QSplashScreen)
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtWidgets import (QApplication, QMainWindow, QTabWidget,
+                               QMessageBox, QSplashScreen, QSystemTrayIcon, QMenu)
+from PySide6.QtGui import QIcon, QPixmap, QAction
 from PySide6.QtCore import Qt, QEventLoop, QTimer
 
 from polkit_manager import PolkitManager
@@ -69,51 +70,47 @@ from tab_help import HelpTab
 from tab_quarantine import QuarantineTab
 
 # -----------------------------------------------------
-# ESTILO OSCURO (MODERNO)
+# ESTILO OSCURO (HACKER / PREMIUM)
 # -----------------------------------------------------
 DARK_STYLE_SHEET = """
-    /* --- VENTANA PRINCIPAL --- */
     QMainWindow, QWidget, QDialog {
-        background-color: #2b2b2b; /* Un gris un poco más profundo */
+        background-color: #2b2b2b;
         color: #F0F0F0;
         font-family: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
         font-size: 14px;
+        selection-background-color: #4CAF50;
     }
 
-    /* --- PANELES Y TARJETAS --- */
     QFrame {
         background-color: #333333;
-        border-radius: 8px; /* Bordes redondeados en los paneles */
+        border-radius: 8px;
+        border: none;
     }
 
-    /* --- BOTONES MODERNOS (VERDES) --- */
+    #OnAccessFrame {
+        background-color: #253529;
+        border: 1px solid #2E7D32;
+    }
+
     QPushButton {
         background-color: #4CAF50;
         color: white;
         font-weight: bold;
         border-radius: 6px;
         padding: 10px 20px;
-
-        /* Truco para simular profundidad/sombra sutil */
         border-bottom: 3px solid #2E7D32;
     }
-
     QPushButton:hover {
-        background-color: #57B85B; /* Un poco más brillante al pasar el ratón */
+        background-color: #57B85B;
         border-bottom: 3px solid #36893B;
     }
-
     QPushButton:pressed {
-        background-color: #2E7D32; /* Color más oscuro al presionar */
-        border-bottom: none; /* Quitamos el borde inferior para simular que baja */
-
-        /* Desplazamos el texto para efecto de "hundimiento" */
+        background-color: #2E7D32;
+        border-bottom: none;
         padding-top: 13px;
         padding-bottom: 7px;
     }
 
-    /* Botones Peligrosos (Rojos - Eliminación/Parada) */
-    /* Usamos el selector de atributo para detectar botones rojos por su estilo inline anterior */
     QPushButton[style*="background-color: #d32f2f"] {
         background-color: #E53935 !important;
         border-bottom: 3px solid #B71C1C !important;
@@ -127,12 +124,11 @@ DARK_STYLE_SHEET = """
         padding-top: 13px;
     }
 
-    /* --- PESTAÑAS (TABS) --- */
     QTabWidget::pane {
         border: 1px solid #444444;
         border-radius: 4px;
         background-color: #333333;
-        top: -1px; /* Fusión con la barra */
+        top: -1px;
     }
     QTabBar::tab {
         background: #2b2b2b;
@@ -141,7 +137,7 @@ DARK_STYLE_SHEET = """
         border-top-left-radius: 6px;
         border-top-right-radius: 6px;
         margin-right: 2px;
-        outline: 0px; /* Sin linea de foco */
+        outline: 0px;
     }
     QTabBar::tab:hover {
         background: #3a3a3a;
@@ -151,11 +147,9 @@ DARK_STYLE_SHEET = """
         background: #4CAF50;
         color: white;
         font-weight: bold;
-        /* Pequeño efecto de elevación en la pestaña activa */
         border-bottom: 2px solid #4CAF50;
     }
 
-    /* --- CONTROLES DE FORMULARIO --- */
     QLineEdit, QComboBox {
         background-color: #1e1e1e;
         border: 1px solid #555555;
@@ -165,10 +159,9 @@ DARK_STYLE_SHEET = """
         selection-background-color: #4CAF50;
     }
     QLineEdit:focus, QComboBox:focus {
-        border: 1px solid #4CAF50; /* Borde verde al escribir */
+        border: 1px solid #4CAF50;
     }
 
-    /* --- TABLAS --- */
     QTableWidget {
         background-color: #1e1e1e;
         gridline-color: #333333;
@@ -187,61 +180,60 @@ DARK_STYLE_SHEET = """
         color: white;
     }
 
-    /* --- RADIO BUTTONS --- */
+    QTextBrowser {
+        border: none;
+        background-color: transparent;
+    }
+
+    /* --- RADIO BUTTONS (FIXED) --- */
     QRadioButton {
-        spacing: 8px;
+        spacing: 10px;
+        color: #F0F0F0;
+        font-weight: bold;
     }
+
+    /* APAGADO: Aro Gris Vacío */
     QRadioButton::indicator {
-        width: 16px;
-        height: 16px;
-        border-radius: 9px;
-        background-color: #1e1e1e;
-        border: 2px solid #666666;
-    }
-    QRadioButton::indicator:checked {
-        background-color: #1e1e1e;
-        border: 2px solid #4CAF50;
-    }
-    /* El punto central del radio */
-    QRadioButton::indicator:checked::image {
-        background-color: #4CAF50;
-        margin: 3px; /* Crea el efecto de anillo */
-        border-radius: 5px;
+        width: 20px;
+        height: 20px;
+        border-radius: 11px; /* Totalmente redondo */
+        background-color: transparent;
+        border: 2px solid #888888;
     }
     QRadioButton::indicator:hover {
         border-color: #4CAF50;
     }
-    #OnAccessFrame {
-        background-color: #253529; /* Verde muy oscuro y elegante */
-        border: 1px solid #2E7D32;
-        border-radius: 8px;
-    }
-    QTextBrowser {
-        border: none;
-        /* El color de fondo lo dejamos transparente en el código Python,
-           pero el color del texto lo heredará de QWidget */
+
+    /* ENCENDIDO: BOLA VERDE MACIZA */
+    QRadioButton::indicator:checked {
+        background-color: #4CAF50;
+        border: 2px solid #4CAF50;
     }
 """
 
 # -----------------------------------------------------
-# ESTILO CLARO (GRIS PROFESIONAL - MÁS OSCURO)
+# ESTILO CLARO (PROFESIONAL)
 # -----------------------------------------------------
 LIGHT_STYLE_SHEET = """
     QMainWindow, QWidget, QDialog {
-        background-color: #C0C0C0; /* Gris Plata sólido (Mucho menos brillo) */
+        background-color: #C0C0C0;
         color: #2C3E50;
         font-family: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
         font-size: 14px;
-        selection-background-color: #4CAF50;
+        selection-background-color: #3498DB;
     }
 
-    /* Los paneles ahora destacan claramente sobre el fondo gris */
     QFrame {
         background-color: #E0E0E0;
         border-radius: 8px;
+        border: none;
     }
 
-    /* --- BOTONES --- */
+    #OnAccessFrame {
+        background-color: #E8F5E9;
+        border: 1px solid #C8E6C9;
+    }
+
     QPushButton {
         background-color: #3498DB;
         color: white;
@@ -261,7 +253,6 @@ LIGHT_STYLE_SHEET = """
         padding-bottom: 7px;
     }
 
-    /* Botones Rojos */
     QPushButton[style*="background-color: #d32f2f"] {
         background-color: #E74C3C !important;
         border-bottom: 3px solid #C0392B !important;
@@ -272,14 +263,14 @@ LIGHT_STYLE_SHEET = """
         padding-top: 13px;
     }
 
-    /* --- PESTAÑAS --- */
     QTabWidget::pane {
         border: 1px solid #999999;
         border-radius: 4px;
-        background-color: #E0E0E0; /* Coincide con los frames */
+        background-color: #E0E0E0;
+        top: -1px;
     }
     QTabBar::tab {
-        background: #B0B0B0; /* Pestañas inactivas más oscuras para contraste */
+        background: #B0B0B0;
         color: #444444;
         padding: 8px 20px;
         border-top-left-radius: 6px;
@@ -292,15 +283,14 @@ LIGHT_STYLE_SHEET = """
         color: #222222;
     }
     QTabBar::tab:selected {
-        background: #3498DB; /* Azul para la activa */
+        background: #3498DB;
         color: white;
         font-weight: bold;
         border-bottom: 2px solid #2980B9;
     }
 
-    /* --- INPUTS Y TABLAS (BLANCOS PARA LEER MEJOR) --- */
     QLineEdit, QComboBox {
-        background-color: #FFFFFF; /* Blanco puro para el texto */
+        background-color: #FFFFFF;
         border: 1px solid #888888;
         border-radius: 4px;
         padding: 5px;
@@ -312,7 +302,7 @@ LIGHT_STYLE_SHEET = """
     }
 
     QTableWidget {
-        background-color: #FFFFFF; /* Tabla blanca sobre fondo gris */
+        background-color: #FFFFFF;
         gridline-color: #DDDDDD;
         border: 1px solid #888888;
         border-radius: 4px;
@@ -330,36 +320,34 @@ LIGHT_STYLE_SHEET = """
         color: white;
     }
 
-    /* --- RADIO BUTTONS --- */
-    QRadioButton {
-        spacing: 8px;
-        color: #222222; /* Texto casi negro */
-    }
-    QRadioButton::indicator {
-        width: 16px;
-        height: 16px;
-        border-radius: 9px;
-        background-color: #FFFFFF;
-        border: 2px solid #666666;
-    }
-    QRadioButton::indicator:checked {
-        background-color: #E0E0E0;
-        border: 2px solid #3498DB;
-    }
-    QRadioButton::indicator:checked::image {
-        background-color: #3498DB;
-        margin: 3px;
-        border-radius: 5px;
-    }
-    #OnAccessFrame {
-        background-color: #E8F5E9; /* Verde claro suave */
-        border: 1px solid #C8E6C9;
-        border-radius: 8px;
-    }
     QTextBrowser {
         border: none;
-        /* El color de fondo lo dejamos transparente en el código Python,
-           pero el color del texto lo heredará de QWidget */
+        background-color: transparent;
+    }
+
+    /* --- RADIO BUTTONS (FIXED) --- */
+    QRadioButton {
+        spacing: 10px;
+        color: #222222;
+        font-weight: bold;
+    }
+
+    /* APAGADO: Aro Gris Vacío sobre fondo Blanco/Transparente */
+    QRadioButton::indicator {
+        width: 20px;
+        height: 20px;
+        border-radius: 11px;
+        background-color: #FFFFFF;
+        border: 2px solid #888888;
+    }
+    QRadioButton::indicator:hover {
+        border-color: #3498DB;
+    }
+
+    /* ENCENDIDO: BOLA AZUL MACIZA */
+    QRadioButton::indicator:checked {
+        background-color: #3498DB;
+        border: 2px solid #3498DB;
     }
 """
 
@@ -376,6 +364,24 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(locales.get_text("app_title"))
         self.setMinimumSize(800, 600)
 
+        self.force_quit = False
+
+        # Icono
+        if getattr(sys, 'frozen', False):
+            base_dir = sys._MEIPASS
+        else:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+
+        icon_path = os.path.join(base_dir, "SentinelX-Icon-512.png")
+        if os.path.exists(icon_path):
+            self.app_icon = QIcon(icon_path)
+            self.setWindowIcon(self.app_icon)
+        else:
+            self.app_icon = QIcon()
+
+        # --- SETUP TRAY ICON ---
+        self.init_tray_icon()
+
         self.tabs = QTabWidget()
         self.tabs.setFocusPolicy(Qt.NoFocus)
         self.setCentralWidget(self.tabs)
@@ -387,8 +393,75 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(ConfigTab(), locales.get_text("tab_config"))
         self.tabs.addTab(HelpTab(), locales.get_text("tab_help"))
 
+    def init_tray_icon(self):
+        """Configura el icono de la bandeja del sistema"""
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(self.app_icon)
+
+        # Crear menú contextual (Click derecho)
+        tray_menu = QMenu()
+
+        action_restore = QAction(locales.get_text("tray_restore"), self)
+        action_restore.triggered.connect(self.show_window)
+        tray_menu.addAction(action_restore)
+
+        tray_menu.addSeparator()
+
+        action_quit = QAction(locales.get_text("tray_quit"), self)
+        action_quit.triggered.connect(self.quit_application)
+        tray_menu.addAction(action_quit)
+
+        self.tray_icon.setContextMenu(tray_menu)
+
+        # Manejar click izquierdo (activar)
+        self.tray_icon.activated.connect(self.on_tray_icon_activated)
+
+        self.tray_icon.show()
+
+    def on_tray_icon_activated(self, reason):
+        """Si hacen click izquierdo, restauramos"""
+        if reason == QSystemTrayIcon.Trigger:
+            if self.isVisible():
+                if self.isMinimized():
+                    self.showNormal()
+                    self.activateWindow()
+                else:
+                    self.hide() # Click para ocultar también es útil
+            else:
+                self.show_window()
+
+    def show_window(self):
+        self.showNormal()
+        self.activateWindow()
+
+    def quit_application(self):
+        """Esta función cierra la app de verdad"""
+        self.force_quit = True
+        QApplication.quit()
+
+    # --- SOBREESCRIBIR EL EVENTO DE CIERRE (La X de la ventana) ---
+    def closeEvent(self, event):
+        if self.force_quit:
+            # Si le dimos a "Salir" en el tray, cerramos de verdad
+            event.accept()
+        else:
+            # Si le dimos a la X, solo ocultamos
+            event.ignore()
+            self.hide()
+            self.tray_icon.showMessage(
+                locales.get_text("tray_minimize_title"),
+                locales.get_text("tray_minimize_msg"),
+                QSystemTrayIcon.Information,
+                2000
+            )
+
 if __name__ == "__main__":
+    os.environ["QT_QPA_PLATFORM"] = "xcb"
+
     app = QApplication(sys.argv)
+
+    # Evitar que la app se cierre si cerramos la última ventana (porque queda el Tray)
+    app.setQuitOnLastWindowClosed(False)
 
     # --- 1. SPLASH SCREEN (Pantalla de Carga) ---
     # Calculamos ruta base (compatible con PyInstaller y Script)
@@ -474,9 +547,23 @@ if __name__ == "__main__":
         app.setWindowIcon(app_icon)
 
     window = MainWindow()
-    window.showMaximized()
 
-    # Cerrar el Splash cuando la ventana principal ya está lista
+    # LÓGICA DE INICIO MINIMIZADO
+    if cfg.get_start_minimized():
+        # No mostramos la ventana (window.show...), solo el icono tray
+        # Mostramos una notificación para que el usuario sepa que está ahí
+        if window.tray_icon:
+            window.tray_icon.show()
+            window.tray_icon.showMessage(
+                "SentinelX",
+                locales.get_text("tray_minimize_msg"),
+                QSystemTrayIcon.Information,
+                2000
+            )
+    else:
+        # Inicio normal
+        window.showMaximized()
+
     if splash:
         splash.finish(window)
 

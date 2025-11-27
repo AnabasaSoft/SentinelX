@@ -124,30 +124,38 @@ class AddRuleDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(locales.get_text("add_rule_title"))
-        self.setFixedSize(300, 200)
+
+        # CAMBIO AQUÍ: Aumentamos el tamaño (Antes era 300, 200)
+        self.setFixedSize(400, 350)
+
         self.init_ui()
 
     def init_ui(self):
         layout = QVBoxLayout()
+        layout.setSpacing(15) # Más espacio entre elementos
+        layout.setContentsMargins(25, 25, 25, 25) # Más margen alrededor
 
         # Input Puerto
         layout.addWidget(QLabel(locales.get_text("add_rule_port_label")))
         self.inp_port = QLineEdit()
         self.inp_port.setPlaceholderText("8080")
-        # Validar que solo sean números hasta 65535
         self.inp_port.setValidator(QIntValidator(1, 65535))
+        # Aseguramos altura para que se vea bien el texto
+        self.inp_port.setMinimumHeight(35)
         layout.addWidget(self.inp_port)
 
         # Input Protocolo
         layout.addWidget(QLabel(locales.get_text("add_rule_proto_label")))
         self.combo_proto = QComboBox()
         self.combo_proto.addItems(["tcp", "udp"])
+        self.combo_proto.setMinimumHeight(35)
         layout.addWidget(self.combo_proto)
 
         # --- CAMPO: NOMBRE ---
         layout.addWidget(QLabel(locales.get_text("add_rule_desc_label")))
         self.inp_desc = QLineEdit()
         self.inp_desc.setPlaceholderText("Ej: Servidor Minecraft")
+        self.inp_desc.setMinimumHeight(35)
         layout.addWidget(self.inp_desc)
 
         layout.addStretch()
@@ -157,6 +165,11 @@ class AddRuleDialog(QDialog):
         buttons.button(QDialogButtonBox.Ok).setText(locales.get_text("add_rule_btn_save"))
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
+
+        # Darle altura a los botones también
+        buttons.button(QDialogButtonBox.Ok).setMinimumHeight(35)
+        buttons.button(QDialogButtonBox.Cancel).setMinimumHeight(35)
+
         layout.addWidget(buttons)
 
         self.setLayout(layout)
@@ -209,7 +222,7 @@ class InboundRulesPanel(QWidget):
         toolbar_layout.addWidget(self.btn_add)
 
         # Botón Eliminar (-)
-        self.btn_del = QPushButton("🗑️ " + locales.get_text("btn_del_rule"))
+        self.btn_del = QPushButton("➖ " + locales.get_text("btn_del_rule"))
         self.btn_del.setStyleSheet("background-color: #d32f2f; color: white;") # Rojo para peligro
         self.btn_del.clicked.connect(self.action_del_rule)
         toolbar_layout.addWidget(self.btn_del)
@@ -366,11 +379,11 @@ class OutboundRulesPanel(QWidget):
 
         # Botón Bloquear Salida (En salida solemos querer bloquear)
         # Reusamos el texto "Añadir Regla" o podríamos poner "Bloquear Puerto"
-        self.btn_add = QPushButton("⛔ " + locales.get_text("btn_add_rule"))
+        self.btn_add = QPushButton("➕ " + locales.get_text("btn_add_rule"))
         self.btn_add.clicked.connect(self.action_add_rule)
         toolbar_layout.addWidget(self.btn_add)
 
-        self.btn_del = QPushButton("🗑️ " + locales.get_text("btn_del_rule"))
+        self.btn_del = QPushButton("➖ " + locales.get_text("btn_del_rule"))
         self.btn_del.setStyleSheet("background-color: #d32f2f; color: white;")
         self.btn_del.clicked.connect(self.action_del_rule)
         toolbar_layout.addWidget(self.btn_del)

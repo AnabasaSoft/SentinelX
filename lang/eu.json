@@ -207,5 +207,14 @@
     "h_links": "Esteka erabilgarriak:",
     "h_portfolio": "🌐 Nire Portafolioa",
     "h_github": "🐙 Iturburu-kodea GitHub-en",
-    "h_email": "📧 Kontaktua: dani.eus79@gmail.com"
+    "h_email": "📧 Kontaktua: dani.eus79@gmail.com",
+
+    "tray_restore": "Lehioa Berreskuratu",
+    "tray_quit": "Erabat Itxi",
+    "tray_minimize_msg": "SentinelX atzeko planoan exekutatzen ari da.",
+    "tray_minimize_title": "Minimizatuta",
+
+    "cfg_behavior_title": "Sistemaren Portaera",
+    "cfg_autostart": "Hasi SentinelX sistema abiatzean",
+    "cfg_start_min": "Hasi sistemaren erretiluan minimizatuta"
 }

@@ -1,22 +1,30 @@
 import json
 import os
+import sys
 from pathlib import Path
 
 class ConfigManager:
     def __init__(self):
-        # 1. Definimos la ruta estándar: /home/usuario/.config/SentinelX
+        # 1. Rutas de Configuración Principal
         self.config_dir = Path.home() / ".config" / "SentinelX"
         self.config_file = self.config_dir / "config.json"
 
-        # 2. Configuración por defecto
+        # 2. Rutas de Auto-Arranque (ESTO ES LO QUE TE FALTABA)
+        self.autostart_dir = Path.home() / ".config" / "autostart"
+        self.autostart_file = self.autostart_dir / "sentinelx.desktop"
+
+        # 3. Configuración por defecto
         self.config = {
             "language": "es",
             "theme": "dark",
+            "start_minimized": False,
             "custom_rules": {},
-            "known_networks": {}
+            "known_networks": {},
+            "polkit_installed": False,
+            "polkit_version": 0
         }
 
-        # 3. Inicializamos (Creamos carpeta y cargamos)
+        # 4. Inicialización
         self.init_storage()
         self.load_config()
 
@@ -24,7 +32,6 @@ class ConfigManager:
         """Crea la carpeta en .config si no existe"""
         try:
             if not self.config_dir.exists():
-                print(f"Creando directorio de configuración: {self.config_dir}")
                 os.makedirs(self.config_dir, exist_ok=True)
         except Exception as e:
             print(f"Error creando directorio config: {e}")
@@ -39,14 +46,11 @@ class ConfigManager:
             except Exception as e:
                 print(f"Error cargando config: {e}")
 
-        # --- BLINDAJE ---
-        # Aseguramos que existan las claves críticas si el archivo es viejo
-        if "custom_rules" not in self.config:
-            self.config["custom_rules"] = {}
-        if "known_networks" not in self.config:
-            self.config["known_networks"] = {}
-        if "theme" not in self.config:
-            self.config["theme"] = "dark"
+        # --- BLINDAJE DE CLAVES ---
+        if "custom_rules" not in self.config: self.config["custom_rules"] = {}
+        if "known_networks" not in self.config: self.config["known_networks"] = {}
+        if "theme" not in self.config: self.config["theme"] = "dark"
+        if "start_minimized" not in self.config: self.config["start_minimized"] = False
 
     def save_config(self):
         """Guarda en /home/usuario/.config/SentinelX/config.json"""
@@ -56,7 +60,7 @@ class ConfigManager:
         except Exception as e:
             print(f"Error guardando config: {e}")
 
-    # --- Getters y Setters (Sin cambios) ---
+    # --- Getters y Setters Básicos ---
 
     def get_language(self):
         return self.config.get("language", "es")
@@ -71,6 +75,79 @@ class ConfigManager:
     def set_theme(self, theme_name):
         self.config["theme"] = theme_name
         self.save_config()
+
+    def get_polkit_version(self):
+        return self.config.get("polkit_version", 0)
+
+    def set_polkit_version(self, version):
+        self.config["polkit_version"] = version
+        self.save_config()
+
+    def get_polkit_installed(self):
+        # Mantenemos compatibilidad hacia atrás si existe el booleano viejo
+        return self.config.get("polkit_installed", False) or (self.get_polkit_version() > 0)
+
+    def set_polkit_installed(self, installed=True):
+        self.config["polkit_installed"] = installed
+        self.save_config()
+
+    # --- Gestión de Minimizado ---
+    def get_start_minimized(self):
+        return self.config.get("start_minimized", False)
+
+    def set_start_minimized(self, value):
+        self.config["start_minimized"] = value
+        self.save_config()
+
+    # --- Gestión de Auto-Arranque (AUTOSTART) ---
+
+    def get_autostart_enabled(self):
+        """Devuelve True si el archivo .desktop existe en autostart"""
+        # AHORA SÍ FUNCIONARÁ PORQUE autostart_file ESTÁ DEFINIDO EN INIT
+        return self.autostart_file.exists()
+
+    def set_autostart_enabled(self, enable):
+        if enable:
+            self._create_autostart_entry()
+        else:
+            self._remove_autostart_entry()
+
+    def _create_autostart_entry(self):
+        if not self.autostart_dir.exists():
+            os.makedirs(self.autostart_dir, exist_ok=True)
+
+        # Detectamos el ejecutable correcto
+        if getattr(sys, 'frozen', False):
+            exe_path = sys.executable
+        else:
+            exe_path = f"{sys.executable} {os.path.abspath(sys.argv[0])}"
+
+        # Icono
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "SentinelX-Icon-512.png")
+
+        content = f"""[Desktop Entry]
+Type=Application
+Name=SentinelX
+Comment=Linux Smart Firewall & Antivirus
+Exec={exe_path}
+Icon={icon_path}
+X-GNOME-Autostart-enabled=true
+Terminal=false
+Categories=System;Security;
+"""
+        try:
+            with open(self.autostart_file, "w") as f:
+                f.write(content)
+            os.chmod(self.autostart_file, 0o755)
+        except Exception as e:
+            print(f"Error creando autostart: {e}")
+
+    def _remove_autostart_entry(self):
+        try:
+            if self.autostart_file.exists():
+                os.remove(self.autostart_file)
+        except Exception as e:
+            print(f"Error borrando autostart: {e}")
 
     # --- Gestión de Reglas ---
 
@@ -101,22 +178,4 @@ class ConfigManager:
         if "known_networks" not in self.config:
             self.config["known_networks"] = {}
         self.config["known_networks"][network_name] = zone
-        self.save_config()
-
-    # --- Gestión de Estado Polkit ---
-    def get_polkit_installed(self):
-        """Devuelve True si ya marcamos la regla como instalada"""
-        return self.config.get("polkit_installed", False)
-
-    def set_polkit_installed(self, installed=True):
-        self.config["polkit_installed"] = installed
-        self.save_config()
-
-    def get_polkit_version(self):
-        """Devuelve la versión de la regla instalada. 0 si no existe."""
-        return self.config.get("polkit_version", 0)
-
-    def set_polkit_version(self, version):
-        """Guarda la versión actual"""
-        self.config["polkit_version"] = version
         self.save_config()
